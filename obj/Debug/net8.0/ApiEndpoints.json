@@ -1,0 +1,149 @@
+[
+  {
+    "ContainingType": "AuthController",
+    "Method": "Login",
+    "RelativePath": "api/auth/login",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "model",
+        "Type": "LoginModel",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "z76_backend.Controllers.ExcelDataController",
+    "Method": "InsertExcel",
+    "RelativePath": "api/ExcelData",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "param",
+        "Type": "System.Collections.Generic.List\u00601[[System.Collections.Generic.List\u00601[[System.Object, System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]], System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "z76_backend.Controllers.BaseController\u00602[[z76_backend.Models.ExportDeclartionEntity, z76-backend, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null],[z76_backend.Services.IExportDeclarationService, z76-backend, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+    "Method": "GetAll",
+    "RelativePath": "api/ExportDeclarations",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": [
+      {
+        "Type": "System.Collections.Generic.IEnumerable\u00601[[z76_backend.Models.ExportDeclartionEntity, z76-backend, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "z76_backend.Controllers.BaseController\u00602[[z76_backend.Models.ExportDeclartionEntity, z76-backend, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null],[z76_backend.Services.IExportDeclarationService, z76-backend, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+    "Method": "SaveEntity",
+    "RelativePath": "api/ExportDeclarations",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "param",
+        "Type": "z76_backend.Models.SaveParameter\u00601[[z76_backend.Models.ExportDeclartionEntity, z76-backend, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "z76_backend.Controllers.BaseController\u00602[[z76_backend.Models.ExportDeclartionEntity, z76-backend, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null],[z76_backend.Services.IExportDeclarationService, z76-backend, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+    "Method": "GetById",
+    "RelativePath": "api/ExportDeclarations/{id}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Guid",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "z76_backend.Models.ExportDeclartionEntity",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "z76_backend.Controllers.BaseController\u00602[[z76_backend.Models.ExportDeclartionEntity, z76-backend, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null],[z76_backend.Services.IExportDeclarationService, z76-backend, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+    "Method": "Delete",
+    "RelativePath": "api/ExportDeclarations/{id}",
+    "HttpMethod": "DELETE",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Guid",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "z76_backend.Controllers.BaseController\u00602[[z76_backend.Models.ExportDeclartionEntity, z76-backend, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null],[z76_backend.Services.IExportDeclarationService, z76-backend, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+    "Method": "GetPaging",
+    "RelativePath": "api/ExportDeclarations/Paging",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "param",
+        "Type": "z76_backend.Models.PagingParameter",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "z76_backend.Controllers.WeatherForecastController",
+    "Method": "Get",
+    "RelativePath": "WeatherForecast",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": [
+      {
+        "Type": "System.Collections.Generic.IEnumerable\u00601[[z76_backend.WeatherForecast, z76-backend, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ],
+    "EndpointName": "GetWeatherForecast"
+  }
+]

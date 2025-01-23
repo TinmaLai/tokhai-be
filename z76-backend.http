@@ -1,0 +1,6 @@
+@z76_backend_HostAddress = http://localhost:5189
+
+GET {{z76_backend_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
