@@ -57,8 +57,18 @@ namespace z76_backend.Controllers
         [HttpPost("Paging")]
         public async Task<IActionResult> GetPaging(PagingParameter param)
         {
-            var data = await _service.GetPagingAsync(param.filters, param.take, param.limit);
-            return Ok(data);
+            switch (param.type)
+            {
+                case (int)PagingTypeEnum.Data:
+                    var data = await _service.GetPagingAsync(param.filters, param.take, param.limit);
+                    return Ok(data);
+                case (int)PagingTypeEnum.Summary:
+                    var summaryData = await _service.GetPagingSummaryAsync(param.filters);
+                    return Ok(summaryData);
+                default:
+                    return Ok();
+            }
+            
         }
     }
 

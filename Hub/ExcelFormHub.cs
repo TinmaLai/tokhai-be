@@ -1,15 +1,20 @@
 ﻿using Google.Protobuf.WellKnownTypes;
 using Microsoft.AspNetCore.SignalR;
+using Org.BouncyCastle.Tls;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using z76_backend.Models;
 
 public class ExcelFormHub : Hub
 {
     // Dùng ConcurrentDictionary để lưu danh sách user an toàn
     private static ConcurrentBag<UserForm> Users = new();
+    private static string tableData = "";
+    private static PaginationInfo paginationInfo;
+    private static string filterGroups = "";
     // Hàm kiểm tra và thêm key-value nếu không trùng
     static bool TryAddUnique(ConcurrentBag<UserForm> dict, UserForm value)
     {
@@ -56,7 +61,13 @@ public class ExcelFormHub : Hub
     }
     public async Task SendTableExportData(string user, string message)
     {
+        tableData = message;
         await Clients.All.SendAsync("ReceiveTableExportData", user, message);
+    }
+    public async Task SendFilterGroups(string user, string message)
+    {
+        filterGroups = message;
+        await Clients.All.SendAsync("ReceiveFilterGroups", user, message);
     }
     public async Task SendUserInForm(UserForm user)
     {
@@ -73,9 +84,20 @@ public class ExcelFormHub : Hub
         await Clients.All.SendAsync("UpdateUserList", Users.ToList());
 
     }
-    
+    public async Task SendPaginationInfo(PaginationInfo clientPaginationInfo)
+    {
+        //Users.Append(newUser);
+        paginationInfo = clientPaginationInfo;
+        await Clients.All.SendAsync("ReceivePaginationInfo", paginationInfo);
+
+    }
     public override async Task OnConnectedAsync()
     {
+        var connectionId = Context.ConnectionId;
+        await Clients.Client(connectionId).SendAsync("ReceiveTableExportData", "", tableData);
+        await Clients.Client(connectionId).SendAsync("ReceivePaginationInfo", paginationInfo);
+        await Clients.All.SendAsync("ReceiveFilterGroups", "", filterGroups);
+
         await base.OnConnectedAsync();
     }
 
@@ -98,4 +120,10 @@ public class UserForm
     public string userName { get; set; }
     public string avatar { get; set; }
     public string connectionId { get; set; }
+}
+public class PaginationInfo
+{
+    public int itemsPerPage { get; set; }
+    public int currentPage { get; set; }
+
 }

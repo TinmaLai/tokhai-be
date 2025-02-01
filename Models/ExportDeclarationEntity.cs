@@ -3,7 +3,7 @@
 namespace z76_backend.Models
 {
     [TableName("export_declaration")]
-    public class ExportDeclartionEntity
+    public class ExportDeclarationEntity
     {
         [Key]
         public Guid id { get; set; } // Khóa chính

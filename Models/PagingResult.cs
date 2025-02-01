@@ -7,4 +7,5 @@
         /// </summary>
         public object Data { get; set; }
     }
+
 }

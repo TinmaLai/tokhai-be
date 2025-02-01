@@ -2,6 +2,7 @@
 using z76_backend.Infrastructure;
 using z76_backend.Models;
 using Newtonsoft.Json;
+using Mysqlx.Crud;
 
 namespace z76_backend.Services
 {
@@ -46,6 +47,15 @@ namespace z76_backend.Services
                 result.Data = await _repository.GetPagingAsync(filterConditions, take, limit);
             }
             return result;
+        }
+        public async Task<object> GetPagingSummaryAsync(string filters)
+        {
+            var filterConditions = JsonConvert.DeserializeObject<List<FilterCondition>>(filters);
+            if (filterConditions != null)
+            {
+                return await _repository.GetPagingSummaryAsync(filterConditions);
+            }
+            return null;
         }
     }
 

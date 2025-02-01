@@ -7,7 +7,7 @@ namespace MyWebAPI.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class ExportDeclarationsController : BaseController<ExportDeclartionEntity, IExportDeclarationService>
+    public class ExportDeclarationsController : BaseController<ExportDeclarationEntity, IExportDeclarationService>
     {
         public ExportDeclarationsController(IExportDeclarationService service) : base(service)
         {

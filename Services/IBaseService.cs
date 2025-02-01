@@ -18,5 +18,6 @@ namespace z76_backend.Services
         /// <param name="limit"></param>
         /// <returns></returns>
         Task<PagingResult> GetPagingAsync(string filters, int take, int limit);
+        Task<object> GetPagingSummaryAsync(string filters);
     }
 }

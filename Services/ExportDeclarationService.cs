@@ -2,7 +2,7 @@
 
 namespace z76_backend.Services
 {
-    public class ExportDeclarationService : BaseService<ExportDeclartionEntity>, IExportDeclarationService
+    public class ExportDeclarationService : BaseService<ExportDeclarationEntity>, IExportDeclarationService
     {
         private readonly IConfiguration _configuration;
         public ExportDeclarationService(IConfiguration configuration) : base(configuration)

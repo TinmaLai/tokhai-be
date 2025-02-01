@@ -2,12 +2,14 @@
 using Google.Protobuf.WellKnownTypes;
 using Microsoft.Extensions.Configuration;
 using MySql.Data.MySqlClient;
+using Mysqlx.Crud;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Configuration;
 using System.Data;
 using System.Data.Common;
 using System.Linq;
+using System.Numerics;
 using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
@@ -117,11 +119,11 @@ namespace z76_backend.Infrastructure
             using var connection = new MySqlConnection(_connectionString);
             string tableName = GetTableName();
 
-            // Danh sách cột hợp lệ
+            // Danh sách toán tử hợp lệ
             var allowedOperators = new Dictionary<string, string>
             {
-                { "=", "=" }, { "!=", "<>" }, { "<", "<" }, { ">", ">" },
-                { "<=", "<=" }, { ">=", ">=" }
+                { "equal", "=" }, { "not equal", "<>" }, { "less", "<" }, { "great", ">" },
+                { "less equal", "<=" }, { "great equal", ">=" }, { "contains", "like" }, { "not contains", "not like" }
             };
 
             var whereClauses = new List<string>();
@@ -133,8 +135,31 @@ namespace z76_backend.Infrastructure
                 foreach (var filter in filters)
                 {
                     string paramName = $"@{filter.Field}_{whereClauses.Count}";
+
+                    // Kiểm tra toán tử có hợp lệ không
+                    if (!allowedOperators.ContainsKey(filter.Operator))
+                    {
+                        throw new ArgumentException($"Operator '{filter.Operator}' is not supported.");
+                    }
+
+                    // Kiểm tra và parse kiểu DateTime
+                    object value = filter.Value;
+                    if (value is string stringValue && DateTime.TryParse(stringValue, out var parsedDate))
+                    {
+                        value = parsedDate; // Parse thành công
+                    }
+
+                    // Thêm vào câu WHERE
                     whereClauses.Add($"{filter.Field} {allowedOperators[filter.Operator]} {paramName}");
-                    parameters.Add(paramName, filter.Value);
+
+                    if (allowedOperators[filter.Operator] == "like" || allowedOperators[filter.Operator] == "not like")
+                    {
+                        parameters.Add(paramName, $"%{value}%");
+                    }
+                    else
+                    {
+                        parameters.Add(paramName, value);
+                    }
                 }
             }
 
@@ -146,15 +171,78 @@ namespace z76_backend.Infrastructure
                 sql.Append(" WHERE " + string.Join(" AND ", whereClauses));
             }
 
-            //sql.Append(" ORDER BY Id DESC"); // Sắp xếp theo Id (có thể thay đổi)
+            // Phân trang
             sql.Append(" LIMIT @Limit OFFSET @Offset");
-
             parameters.Add("@Limit", limit);
             parameters.Add("@Offset", (take - 1) * limit);
 
             // Thực hiện truy vấn
             var result = await connection.QueryAsync<T>(sql.ToString(), parameters);
             return result.ToList();
+        }
+        public async Task<object> GetPagingSummaryAsync(List<FilterCondition> filters)
+        {
+            using var connection = new MySqlConnection(_connectionString);
+            string tableName = GetTableName();
+
+            // Danh sách toán tử hợp lệ
+            var allowedOperators = new Dictionary<string, string>
+            {
+                { "equal", "=" }, { "not equal", "<>" }, { "less", "<" }, { "great", ">" },
+                { "less equal", "<=" }, { "great equal", ">=" }, { "contains", "like" }, { "not contains", "not like" }
+            };
+
+            var whereClauses = new List<string>();
+            var parameters = new DynamicParameters();
+
+            // Xây dựng câu WHERE từ filters
+            if (filters != null)
+            {
+                foreach (var filter in filters)
+                {
+                    string paramName = $"@{filter.Field}_{whereClauses.Count}";
+
+                    // Kiểm tra toán tử có hợp lệ không
+                    if (!allowedOperators.ContainsKey(filter.Operator))
+                    {
+                        throw new ArgumentException($"Operator '{filter.Operator}' is not supported.");
+                    }
+
+                    // Kiểm tra và parse kiểu DateTime
+                    object value = filter.Value;
+                    if (value is string stringValue && DateTime.TryParse(stringValue, out var parsedDate))
+                    {
+                        value = parsedDate; // Parse thành công
+                    }
+
+                    // Thêm vào câu WHERE
+                    whereClauses.Add($"{filter.Field} {allowedOperators[filter.Operator]} {paramName}");
+
+                    if (allowedOperators[filter.Operator] == "like" || allowedOperators[filter.Operator] == "not like")
+                    {
+                        parameters.Add(paramName, $"%{value}%");
+                    }
+                    else
+                    {
+                        parameters.Add(paramName, value);
+                    }
+                }
+            }
+
+            // Xây dựng câu SQL
+            var sql = new StringBuilder($"SELECT COUNT(*) FROM {tableName}");
+
+            if (whereClauses.Any())
+            {
+                sql.Append(" WHERE " + string.Join(" AND ", whereClauses));
+            }
+
+            // Thực hiện truy vấn
+            var result = await connection.ExecuteScalarAsync<int>(sql.ToString(), parameters);
+            return new
+            {
+                Total = result
+            };
         }
     }
 }

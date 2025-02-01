@@ -2,7 +2,7 @@
 
 namespace z76_backend.Services
 {
-    public interface IExportDeclarationService : IBaseService<ExportDeclartionEntity>
+    public interface IExportDeclarationService : IBaseService<ExportDeclarationEntity>
     {
     }
 }
