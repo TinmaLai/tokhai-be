@@ -51,6 +51,10 @@ namespace z76_backend.Controllers
                     detailDict[key].Add(row);
                 }
 
+                var numberColumns = new List<int> { 5, 10, 11, 12, 14 };
+                var centerAlignColumns = new List<int> {2, 9, 13 };
+                var textColumns = new List<int> { 1,2,3,4,6,7,8,9,15 };
+
                 using (var taxPackage = new ExcelPackage(taxFile.OpenReadStream()))
                 {
                     // Lấy sheet đầu tiên không bị ẩn (nếu có)
@@ -137,13 +141,7 @@ namespace z76_backend.Controllers
                                 {
                                     taxSheet.Cells[row, map.TaxCol].Style.Fill.PatternType = ExcelFillStyle.Solid;
                                     taxSheet.Cells[row, map.TaxCol].Style.Fill.BackgroundColor.SetColor(System.Drawing.Color.Red);
-                                    // Thêm border cho bên trái và bên phải của ô B2
-                                    taxSheet.Cells[row, map.TaxCol].Style.Border.Left.Style = ExcelBorderStyle.Thin;
-                                    taxSheet.Cells[row, map.TaxCol].Style.Border.Right.Style = ExcelBorderStyle.Thin;
-
-                                    // (Tùy chọn) Đặt màu cho border nếu cần
-                                    taxSheet.Cells[row, map.TaxCol].Style.Border.Left.Color.SetColor(Color.Black);
-                                    taxSheet.Cells[row, map.TaxCol].Style.Border.Right.Color.SetColor(Color.Black);
+                                    
                                     hasError = true;
                                 }
                             }
@@ -158,9 +156,21 @@ namespace z76_backend.Controllers
                                 string original = taxSheet.Cells[row, map.TaxCol].Text.Trim();
                                 // Bind giá trị mới vào ô TaxFile
                                 taxSheet.Cells[row, map.TaxCol].Value = detailVal;
-                                if (taxSheet.Cells[row, map.TaxCol].Value is double || taxSheet.Cells[row, map.TaxCol].Value is int || taxSheet.Cells[row, map.TaxCol].Value is decimal)
+                                if (map.TaxCol == 13) taxSheet.Cells[row, map.TaxCol].Value = detailVal.Trim('%');
+                                // Thêm border cho bên trái và bên phải của ô B2
+                                taxSheet.Cells[row, map.TaxCol].Style.Border.Left.Style = ExcelBorderStyle.Thin;
+                                taxSheet.Cells[row, map.TaxCol].Style.Border.Right.Style = ExcelBorderStyle.Thin;
+
+                                // (Tùy chọn) Đặt màu cho border nếu cần
+                                taxSheet.Cells[row, map.TaxCol].Style.Border.Left.Color.SetColor(Color.Black);
+                                taxSheet.Cells[row, map.TaxCol].Style.Border.Right.Color.SetColor(Color.Black);
+                                if (numberColumns.Exists(x => x == map.TaxCol))
                                 {
                                     taxSheet.Cells[row, map.TaxCol].Style.HorizontalAlignment = ExcelHorizontalAlignment.Right; // Căn phải nếu là số
+                                }
+                                else if (centerAlignColumns.Exists(x => x == map.TaxCol))
+                                {
+                                    taxSheet.Cells[row, map.TaxCol].Style.HorizontalAlignment = ExcelHorizontalAlignment.Center; // Căn phải nếu là số
                                 }
                                 else
                                 {
@@ -250,6 +260,8 @@ namespace z76_backend.Controllers
                                                      ? matchingRows[0][compareMappings[j].DetailCol - 1].Trim()
                                                      : "";
                                 taxSheet.Cells[row, compareMappings[j].TaxCol].Value = detailVal; // bind từ matchingRows[0]
+                                if (compareMappings[j].TaxCol == 13) taxSheet.Cells[row, compareMappings[j].TaxCol].Value = detailVal.Trim('%');
+
                                 double origVal = 0;
                                 double.TryParse(original, out origVal);
                                 if (Math.Abs(origVal - sums[j]) > 0.0001)
@@ -258,13 +270,7 @@ namespace z76_backend.Controllers
 
                                     taxSheet.Cells[row, compareMappings[j].TaxCol].Style.Fill.PatternType = ExcelFillStyle.Solid;
                                     taxSheet.Cells[row, compareMappings[j].TaxCol].Style.Fill.BackgroundColor.SetColor(System.Drawing.Color.Red);
-                                    // Thêm border cho bên trái và bên phải của ô B2
-                                    taxSheet.Cells[row, compareMappings[j].TaxCol].Style.Border.Left.Style = ExcelBorderStyle.Thin;
-                                    taxSheet.Cells[row, compareMappings[j].TaxCol].Style.Border.Right.Style = ExcelBorderStyle.Thin;
-
-                                    // (Tùy chọn) Đặt màu cho border nếu cần
-                                    taxSheet.Cells[row, compareMappings[j].TaxCol].Style.Border.Left.Color.SetColor(Color.Black);
-                                    taxSheet.Cells[row, compareMappings[j].TaxCol].Style.Border.Right.Color.SetColor(Color.Black);
+                                    
                                 }
                             }
                             for (int j = 0; j < mappings.Length; j++)
@@ -274,9 +280,22 @@ namespace z76_backend.Controllers
                                                      ? matchingRows[0][mappings[j].DetailCol - 1].Trim()
                                                      : "";
                                 taxSheet.Cells[row, mappings[j].TaxCol].Value = detailVal; // bind từ matchingRows[0]
-                                if (taxSheet.Cells[row, mappings[j].TaxCol].Value is double || taxSheet.Cells[row, mappings[j].TaxCol].Value is int || taxSheet.Cells[row, mappings[j].TaxCol].Value is decimal)
+                                if (mappings[j].TaxCol == 13) taxSheet.Cells[row, mappings[j].TaxCol].Value = detailVal.Trim('%');
+
+                                // Thêm border cho bên trái và bên phải của ô B2
+                                taxSheet.Cells[row, mappings[j].TaxCol].Style.Border.Left.Style = ExcelBorderStyle.Thin;
+                                taxSheet.Cells[row, mappings[j].TaxCol].Style.Border.Right.Style = ExcelBorderStyle.Thin;
+
+                                // (Tùy chọn) Đặt màu cho border nếu cần
+                                taxSheet.Cells[row, mappings[j].TaxCol].Style.Border.Left.Color.SetColor(Color.Black);
+                                taxSheet.Cells[row, mappings[j].TaxCol].Style.Border.Right.Color.SetColor(Color.Black);
+                                if (numberColumns.Exists(x => x == mappings[j].TaxCol))
                                 {
                                     taxSheet.Cells[row, mappings[j].TaxCol].Style.HorizontalAlignment = ExcelHorizontalAlignment.Right; // Căn phải nếu là số
+                                }
+                                else if (centerAlignColumns.Exists(x => x == mappings[j].TaxCol))
+                                {
+                                    taxSheet.Cells[row, mappings[j].TaxCol].Style.HorizontalAlignment = ExcelHorizontalAlignment.Center; // Căn phải nếu là số
                                 }
                                 else
                                 {
@@ -317,22 +336,28 @@ namespace z76_backend.Controllers
                                         ? matchingRows[i][map.DetailCol - 1].Trim()
                                         : "";
                                     taxSheet.Cells[row + i, map.TaxCol].Value = detailVal;
+                                    if (map.TaxCol == 13) taxSheet.Cells[row, map.TaxCol].Value = detailVal.Trim('%');
 
                                     if ((map.TaxCol == 12 || map.TaxCol == 14) && errorGroup2 == true)
                                     {
                                         taxSheet.Cells[row + i, map.TaxCol].Style.Fill.PatternType = ExcelFillStyle.Solid;
                                         taxSheet.Cells[row + i, map.TaxCol].Style.Fill.BackgroundColor.SetColor(System.Drawing.Color.Red);
-                                        // Thêm border cho bên trái và bên phải của ô B2
-                                        taxSheet.Cells[row + i, map.TaxCol].Style.Border.Left.Style = ExcelBorderStyle.Thin;
-                                        taxSheet.Cells[row + i, map.TaxCol].Style.Border.Right.Style = ExcelBorderStyle.Thin;
-
-                                        // (Tùy chọn) Đặt màu cho border nếu cần
-                                        taxSheet.Cells[row + i, map.TaxCol].Style.Border.Left.Color.SetColor(Color.Black);
-                                        taxSheet.Cells[row + i, map.TaxCol].Style.Border.Right.Color.SetColor(Color.Black);
+                                        
                                     }
-                                    if (taxSheet.Cells[row + i, map.TaxCol].Value is double || taxSheet.Cells[row + i, map.TaxCol].Value is int || taxSheet.Cells[row + i, map.TaxCol].Value is decimal)
+                                    // Thêm border cho bên trái và bên phải của ô B2
+                                    taxSheet.Cells[row + i, map.TaxCol].Style.Border.Left.Style = ExcelBorderStyle.Thin;
+                                    taxSheet.Cells[row + i, map.TaxCol].Style.Border.Right.Style = ExcelBorderStyle.Thin;
+
+                                    // (Tùy chọn) Đặt màu cho border nếu cần
+                                    taxSheet.Cells[row + i, map.TaxCol].Style.Border.Left.Color.SetColor(Color.Black);
+                                    taxSheet.Cells[row + i, map.TaxCol].Style.Border.Right.Color.SetColor(Color.Black);
+                                    if (numberColumns.Exists(x => x == map.TaxCol))
                                     {
                                         taxSheet.Cells[row + i, map.TaxCol].Style.HorizontalAlignment = ExcelHorizontalAlignment.Right; // Căn phải nếu là số
+                                    }
+                                    else if (centerAlignColumns.Exists(x => x == map.TaxCol))
+                                    {
+                                        taxSheet.Cells[row + i, map.TaxCol].Style.HorizontalAlignment = ExcelHorizontalAlignment.Center; // Căn phải nếu là số
                                     }
                                     else
                                     {
