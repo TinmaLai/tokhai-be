@@ -8,81 +8,544 @@ namespace z76_backend.Models
         [Key]
         public Guid id { get; set; } // Khóa chính
 
-        public int? stt { get; set; } // Số thứ tự
-        public string? so_to_khai { get; set; } // Số tờ khai
-        public DateTime? ngay_dang_ky { get; set; } // Ngày đăng ký
-        public string? ma_hq { get; set; } // Mã HQ
-        public string? ma_lh { get; set; } // Mã LH
-        public string? ten_doi_tac { get; set; } // Tên đối tác
-        public string? ma_dai_ly_hq { get; set; } // Mã đại lý HQ
-        public string? phan_loai_ca_nhan_to_chuc { get; set; } // Phân loại cá nhân/tổ chức
-        public string? ma_bo_phan_xu_ly_tk { get; set; } // Mã bộ phận xử lý tờ khai
-        public string? ma_hieu_phuong_thuc_van_chuyen { get; set; } // Mã hiệu phương thức vận chuyển
-        public string? van_don { get; set; } // Vận đơn
-        public int? so_luong_kien { get; set; } // Số lượng kiện
-        public decimal? tong_trong_luong_hang_gross { get; set; } // Tổng trọng lượng hàng (Gross)
-        public string? ma_dia_diem_luu_kho { get; set; } // Mã địa điểm lưu kho
-        public string? ten_dia_diem_luu_kho { get; set; } // Tên địa điểm lưu kho
-        public string? ma_phuong_tien_van_chuyen { get; set; } // Mã phương tiện vận chuyển
-        public string? ten_phuong_tien_van_chuyen { get; set; } // Tên phương tiện vận chuyển
-        public DateTime? ngay_den { get; set; } // Ngày đến
-        public string? ma_dia_diem_xep_hang { get; set; } // Mã địa điểm xếp hàng
-        public string? ten_dia_diem_xep_hang { get; set; } // Tên địa điểm xếp hàng
-        public string? ma_dia_diem_do_hang { get; set; } // Mã địa điểm dỡ hàng
-        public string? ten_dia_diem_do_hang { get; set; } // Tên địa điểm dỡ hàng
-        public int? so_luong_cont { get; set; } // Số lượng container
-        public string? so_giay_phep { get; set; } // Số giấy phép
-        public string? so_hd_tm { get; set; } // Số HĐTM
-        public DateTime? ngay_hd_tm { get; set; } // Ngày HĐTM
-        public decimal? tong_tri_gia_hd { get; set; } // Tổng trị giá hợp đồng
-        public string? phuong_thuc_thanh_toan { get; set; } // Phương thức thanh toán
-        public string? dieu_kien_gia_hoa_don { get; set; } // Điều kiện giá hóa đơn
-        public string? ngoai_te_hoa_don { get; set; } // Ngoại tệ hóa đơn
-        public decimal? ty_gia_vnd { get; set; } // Tỷ giá VNĐ
-        public decimal? phi_bh { get; set; } // Phí bảo hiểm
-        public decimal? phi_vc { get; set; } // Phí vận chuyển
-        public string? nguoi_nop_thue { get; set; } // Người nộp thuế
-        public decimal? tri_gia_kb { get; set; } // Trị giá không bao gồm thuế
-        public decimal? tong_tri_gia_tt { get; set; } // Tổng trị giá tính thuế
-        public decimal? tong_tien_thue { get; set; } // Tổng tiền thuế
-        public string? ma_ly_do_de_nghi_bp { get; set; } // Mã lý do đề nghị bảo lãnh
-        public string? ma_ngan_hang_tra_thue { get; set; } // Mã ngân hàng trả thuế
-        public int? nam_phat_hanh_han_muc { get; set; } // Năm phát hành hạn mức
-        public string? ky_hieu_ct_han_muc { get; set; } // Ký hiệu CT hạn mức
-        public string? so_ct_han_muc { get; set; } // Số CT hạn mức
-        public string? ma_xac_dinh_thoi_han_nop_thue { get; set; } // Mã xác định thời hạn nộp thuế
-        public string? ma_ngan_hang_bao_lanh { get; set; } // Mã ngân hàng bảo lãnh
-        public int? nam_phat_hanh_bao_lanh { get; set; } // Năm phát hành bảo lãnh
-        public string? ky_hieu_ct_bao_lanh { get; set; } // Ký hiệu CT bảo lãnh
-        public string? so_hieu_ct_bao_lanh { get; set; } // Số hiệu CT bảo lãnh
-        public string? so_hd { get; set; } // Số hợp đồng
-        public DateTime? ngay_hd { get; set; } // Ngày hợp đồng
-        public DateTime? ngay_hh_hd { get; set; } // Ngày hết hạn hợp đồng
-        public int? trang_thai { get; set; } // Trạng thái
-        public string? phan_luong { get; set; } // Phân luồng
-        public string? loai_to_khai_nhap_xuat { get; set; } // Loại tờ khai nhập xuất
-        public string? ten_don_vi_xuat_nhap_khau { get; set; } // Tên đơn vị xuất/nhập khẩu
-        public string? loai_hinh_to_khai { get; set; } // Loại hình tờ khai
-        public string? dia_chi_dn_xuat_nhap_khau { get; set; } // Địa chỉ doanh nghiệp xuất/nhập khẩu
-        public string? ma_nuoc_xuat_khau { get; set; } // Mã nước xuất khẩu
-        public string? loai_kien { get; set; } // Loại kiện
-        public string? don_vi_tinh_trong_luong { get; set; } // Đơn vị tính trọng lượng
-        public string? hoa_don_thuong_mai { get; set; } // Hóa đơn thương mại
-        public string? ma_phan_loai_hoa_don { get; set; } // Mã phân loại hóa đơn
-        public string? ma_phan_loai_phi_van_chuyen { get; set; } // Mã phân loại phí vận chuyển
-        public string? ma_phan_loai_phi_bao_hiem { get; set; } // Mã phân loại phí bảo hiểm
-        public string? ma_tien_phi_van_chuyen { get; set; } // Mã tiền phí vận chuyển
-        public string? ma_tien_phi_bao_hiem { get; set; } // Mã tiền phí bảo hiểm
-        public string? dia_chi_nguoi_xuat_nhap_khau_1 { get; set; } // Địa chỉ người xuất/nhập khẩu 1
-        public string? ghi_chu { get; set; } // Ghi chú
-        public string? ma_phan_loai_hinh_thuc_hoa_don { get; set; } // Mã phân loại hình thức hóa đơn
-        public string? dia_diem_dich_cho_van_chuyen_bao_thue { get; set; } // Địa điểm đích cho vận chuyển báo thuế
-        public DateTime? ngay_du_kien_den_dia_diem_dich { get; set; } // Ngày dự kiến đến địa điểm đích
-        public DateTime? ngay_khoi_hanh_van_chuyen { get; set; } // Ngày khởi hành vận chuyển
-        public string? ma_phan_loai_to_khai_tri_gia { get; set; } // Mã phân loại tờ khai trị giá
-        public string? dia_chi_nguoi_xuat_nhap_khau_2 { get; set; } // Địa chỉ người xuất/nhập khẩu 2
-        public string? dia_chi_nguoi_xuat_nhap_khau_3 { get; set; } // Địa chỉ người xuất/nhập khẩu 3
-        public string? dia_chi_nguoi_xuat_nhap_khau_4 { get; set; } // Địa chỉ người xuất/nhập khẩu 4
-        public string? ma_dong_tien_tri_gia_tinh_thue { get; set; } // Mã đồng tiền trị giá tính thuế
+        /// <summary>
+        /// STT
+        /// </summary>
+        public int stt { get; set; }
+
+        /// <summary>
+        /// Số tờ khai
+        /// </summary>
+        public string so_to_khai { get; set; }
+
+        /// <summary>
+        /// Số tờ khai đầu tiên
+        /// </summary>
+        public string so_to_khai_dau_tien { get; set; }
+
+        /// <summary>
+        /// Số nhánh
+        /// </summary>
+        public string so_nhanh { get; set; }
+
+        /// <summary>
+        /// Số tờ khai tạm nhập tái xuất tương ứng
+        /// </summary>
+        public int tong_so_to_khai_tam_nhap_tai_xuat_tuong_ung { get; set; }
+
+        /// <summary>
+        /// (Không có mô tả)
+        /// </summary>
+        public string so_to_khai_tam_nhap_tai_xuat_tuong_ung { get; set; }
+
+        /// <summary>
+        /// Mã loại hình
+        /// </summary>
+        public string ma_loai_hinh { get; set; }
+
+        /// <summary>
+        /// Mã phân loại hàng hóa
+        /// </summary>
+        public string ma_phan_loai_hang_hoa { get; set; }
+
+        /// <summary>
+        /// Cơ quan Hải quan
+        /// </summary>
+        public string co_quan_hai_quan { get; set; }
+
+        /// <summary>
+        /// Mã bộ phận xử lý tờ khai
+        /// </summary>
+        public string ma_bo_phan_xu_ly_to_khai { get; set; }
+
+        /// <summary>
+        /// Thời hạn tái nhập khẩu
+        /// </summary>
+        public DateTime thoi_han_tai_nhap_khau { get; set; }
+
+        /// <summary>
+        /// Mã hiệu phương thức vận chuyển
+        /// </summary>
+        public string ma_hieu_phuong_thuc_van_chuyen { get; set; }
+
+        /// <summary>
+        /// Ngày khai báo (dự kiến)
+        /// </summary>
+        public DateTime ngay_khai_bao_du_kien { get; set; }
+
+        /// <summary>
+        /// Mã số thuế người xuất khẩu
+        /// </summary>
+        public string ma_so_thue_nguoi_xuat_khau { get; set; }
+
+        /// <summary>
+        /// Tên người xuất khẩu
+        /// </summary>
+        public string ten_nguoi_xuat_khau { get; set; }
+
+        /// <summary>
+        /// Mã bưu chính người xuất khẩu
+        /// </summary>
+        public string ma_buu_chinh_nguoi_xuat_khau { get; set; }
+
+        /// <summary>
+        /// Địa chỉ người xuất khẩu
+        /// </summary>
+        public string dia_chi_nguoi_xuat_khau { get; set; }
+
+        /// <summary>
+        /// Điện thoại người xuất khẩu
+        /// </summary>
+        public string dien_thoai_nguoi_xuat_khau { get; set; }
+
+        /// <summary>
+        /// Mã người ủy thác xuất khẩu
+        /// </summary>
+        public string ma_nguoi_uy_thac_xuat_khau { get; set; }
+
+        /// <summary>
+        /// Tên người ủy thác xuất khẩu
+        /// </summary>
+        public string ten_nguoi_uy_thac_xuat_khau { get; set; }
+
+        /// <summary>
+        /// Mã người nhập khẩu
+        /// </summary>
+        public string ma_nguoi_nhap_khau { get; set; }
+
+        /// <summary>
+        /// Tên người nhập khẩu
+        /// </summary>
+        public string ten_nguoi_nhap_khau { get; set; }
+
+        /// <summary>
+        /// Mã bưu chính người nhập khẩu
+        /// </summary>
+        public string ma_buu_chinh_nguoi_nhap_khau { get; set; }
+
+        /// <summary>
+        /// Địa chỉ người nhập khẩu
+        /// </summary>
+        public string dia_chi_nguoi_nhap_khau1 { get; set; }
+
+        /// <summary>
+        /// (Không có mô tả)
+        /// </summary>
+        public string dia_chi_nguoi_nhap_khau2 { get; set; }
+
+        /// <summary>
+        /// (Không có mô tả)
+        /// </summary>
+        public string dia_chi_nguoi_nhap_khau3 { get; set; }
+
+        /// <summary>
+        /// (Không có mô tả)
+        /// </summary>
+        public string dia_chi_nguoi_nhap_khau4 { get; set; }
+
+        /// <summary>
+        /// Mã nước người nhập khẩu
+        /// </summary>
+        public string ma_nuoc_nguoi_nhap_khau { get; set; }
+
+        /// <summary>
+        /// Mã người khai Hải quan
+        /// </summary>
+        public string ma_nguoi_khai_hai_quan { get; set; }
+
+        /// <summary>
+        /// Số vận đơn
+        /// </summary>
+        public string so_van_don { get; set; }
+
+        /// <summary>
+        /// Số lượng kiện
+        /// </summary>
+        public int so_luong_kien { get; set; }
+
+        /// <summary>
+        /// Loại kiện hàng
+        /// </summary>
+        public string loai_kien_hang { get; set; }
+
+        /// <summary>
+        /// Tổng trọng lượng hàng (Gross)
+        /// </summary>
+        public decimal tong_trong_luong_hang_gross { get; set; }
+
+        /// <summary>
+        /// Đơn vị trọng lượng
+        /// </summary>
+        public string don_vi_trong_luong { get; set; }
+
+        /// <summary>
+        /// Mã địa điểm lưu kho hàng chờ thông quan dự kiến
+        /// </summary>
+        public string ma_dia_diem_luu_kho_hang_cho_thong_quan_du_kien { get; set; }
+
+        /// <summary>
+        /// Địa điểm nhận hàng cuối cùng
+        /// </summary>
+        public string dia_diem_nhan_hang_cuoi_cung { get; set; }
+
+        /// <summary>
+        /// Địa điểm xếp hàng
+        /// </summary>
+        public string dia_diem_xep_hang { get; set; }
+
+        /// <summary>
+        /// Mã Phương tiện vận chuyển
+        /// </summary>
+        public string ma_phuong_tien_van_chuyen { get; set; }
+
+        /// <summary>
+        /// Ngày hàng đi dự kiến
+        /// </summary>
+        public DateTime ngay_hang_di_du_kien { get; set; }
+
+        /// <summary>
+        /// Ký hiệu và số hiệu
+        /// </summary>
+        public string ky_hieu_va_so_hieu { get; set; }
+
+        /// <summary>
+        /// Số hợp đồng
+        /// </summary>
+        public string so_hop_dong { get; set; }
+
+        /// <summary>
+        /// Ngày hợp đồng
+        /// </summary>
+        public DateTime ngay_hop_dong { get; set; }
+
+        /// <summary>
+        /// Ngày hết hạn
+        /// </summary>
+        public DateTime ngay_het_han { get; set; }
+
+        /// <summary>
+        /// Giấy phép xuất khẩu:
+        /// </summary>
+        public string giay_phep_xuat_khau1 { get; set; }
+
+        /// <summary>
+        /// (Không có mô tả)
+        /// </summary>
+        public string giay_phep_xuat_khau2 { get; set; }
+
+        /// <summary>
+        /// (Không có mô tả)
+        /// </summary>
+        public string giay_phep_xuat_khau3 { get; set; }
+
+        /// <summary>
+        /// (Không có mô tả)
+        /// </summary>
+        public string giay_phep_xuat_khau4 { get; set; }
+
+        /// <summary>
+        /// (Không có mô tả)
+        /// </summary>
+        public string giay_phep_xuat_khau5 { get; set; }
+
+        /// <summary>
+        /// Phân loại hình thức hóa đơn
+        /// </summary>
+        public string phan_loai_hinh_thuc_hoa_don { get; set; }
+
+        /// <summary>
+        /// Số tiếp nhận hóa đơn điện tử
+        /// </summary>
+        public string so_tiep_nhan_hoa_don_dien_tu { get; set; }
+
+        /// <summary>
+        /// Số hóa đơn
+        /// </summary>
+        public string so_hoa_don { get; set; }
+
+        /// <summary>
+        /// Ngày phát hành
+        /// </summary>
+        public DateTime ngay_phat_hanh { get; set; }
+
+        /// <summary>
+        /// Phương thức thanh toán
+        /// </summary>
+        public string phuong_thuc_thanh_toan { get; set; }
+
+        /// <summary>
+        /// Mã phân loại giá hóa đơn
+        /// </summary>
+        public string ma_phan_loai_gia_hoa_don { get; set; }
+
+        /// <summary>
+        /// Điều kiện giá hóa đơn
+        /// </summary>
+        public string dieu_kien_gia_hoa_don { get; set; }
+
+        /// <summary>
+        /// Tổng trị giá hóa đơn
+        /// </summary>
+        public decimal tong_tri_gia_hoa_don { get; set; }
+
+        /// <summary>
+        /// Mã đồng tiền của hóa đơn
+        /// </summary>
+        public string ma_dong_tien_cua_hoa_don { get; set; }
+
+        /// <summary>
+        /// Trị giá tính thuế:
+        /// </summary>
+        public decimal tri_gia_tinh_thue { get; set; }
+
+        /// <summary>
+        /// Mã đồng tiền trị giá tính thuế:
+        /// </summary>
+        public string ma_dong_tien_tri_gia_tinh_thue { get; set; }
+
+        /// <summary>
+        /// Phân loại không cần quy đổi VNĐ
+        /// </summary>
+        public string phan_loai_khong_can_quy_doi_vnd { get; set; }
+
+        /// <summary>
+        /// Tổng hệ số phân bổ trị giá tính thuế
+        /// </summary>
+        public decimal tong_he_so_phan_bo_tri_gia_tinh_thue { get; set; }
+
+        /// <summary>
+        /// Người nộp thuế
+        /// </summary>
+        public string nguoi_nop_thue { get; set; }
+
+        /// <summary>
+        /// Mã ngân hàng trả thuế thay
+        /// </summary>
+        public string ma_ngan_hang_tra_thue_thay { get; set; }
+
+        /// <summary>
+        /// Năm phát hành hạn mức
+        /// </summary>
+        public int nam_phat_hanh_han_muc { get; set; }
+
+        /// <summary>
+        /// Ký hiệu chứng từ hạn mức
+        /// </summary>
+        public string ky_hieu_chung_tu_han_muc { get; set; }
+
+        /// <summary>
+        /// Số chứng từ hạn mức
+        /// </summary>
+        public string so_chung_tu_han_muc { get; set; }
+
+        /// <summary>
+        /// Mã xác định thời hạn nộp thuế
+        /// </summary>
+        public string ma_xac_dinh_thoi_han_nop_thue { get; set; }
+
+        /// <summary>
+        /// Mã ngân hàng bảo lãnh
+        /// </summary>
+        public string ma_ngan_hang_bao_lanh { get; set; }
+
+        /// <summary>
+        /// Năm phát hành bảo lãnh
+        /// </summary>
+        public int nam_phat_hanh_bao_lanh { get; set; }
+
+        /// <summary>
+        /// Ký hiệu chứng từ bảo lãnh
+        /// </summary>
+        public string ky_hieu_chung_tu_bao_lanh { get; set; }
+
+        /// <summary>
+        /// Số chứng từ bảo lãnh
+        /// </summary>
+        public string so_chung_tu_bao_lanh { get; set; }
+
+        /// <summary>
+        /// Phân loại đính kèm
+        /// </summary>
+        public string phan_loai_dinh_kem1 { get; set; }
+
+        /// <summary>
+        /// (Không có mô tả)
+        /// </summary>
+        public string phan_loai_dinh_kem2 { get; set; }
+
+        /// <summary>
+        /// (Không có mô tả)
+        /// </summary>
+        public string phan_loai_dinh_kem3 { get; set; }
+
+        /// <summary>
+        /// Số đính kèm
+        /// </summary>
+        public int so_dinh_kem1 { get; set; }
+
+        /// <summary>
+        /// (Không có mô tả)
+        /// </summary>
+        public int so_dinh_kem2 { get; set; }
+
+        /// <summary>
+        /// (Không có mô tả)
+        /// </summary>
+        public int so_dinh_kem3 { get; set; }
+
+        /// <summary>
+        /// Ngày khởi hành vận chuyển
+        /// </summary>
+        public DateTime ngay_khoi_hanh_van_chuyen { get; set; }
+
+        /// <summary>
+        /// Mã địa điểm (Thông tin trung chuyển) 1
+        /// </summary>
+        public string ma_dia_diem_thong_tin_trung_chuyen_1 { get; set; }
+
+        /// <summary>
+        /// Ngày đến (Thông tin trung chuyển) 1
+        /// </summary>
+        public DateTime ngay_den_thong_tin_trung_chuyen_1 { get; set; }
+
+        /// <summary>
+        /// Ngày khởi hành (Thông tin trung chuyển) 1
+        /// </summary>
+        public DateTime ngay_khoi_hanh_thong_tin_trung_chuyen_1 { get; set; }
+
+        /// <summary>
+        /// Mã địa điểm (Thông tin trung chuyển) 2
+        /// </summary>
+        public string ma_dia_diem_thong_tin_trung_chuyen_2 { get; set; }
+
+        /// <summary>
+        /// Ngày đến (Thông tin trung chuyển) 2
+        /// </summary>
+        public DateTime ngay_den_thong_tin_trung_chuyen_2 { get; set; }
+
+        /// <summary>
+        /// Ngày khởi hành (Thông tin trung chuyển) 2
+        /// </summary>
+        public DateTime ngay_khoi_hanh_thong_tin_trung_chuyen_2 { get; set; }
+
+        /// <summary>
+        /// Mã địa điểm (Thông tin trung chuyển) 3
+        /// </summary>
+        public string ma_dia_diem_thong_tin_trung_chuyen_3 { get; set; }
+
+        /// <summary>
+        /// Ngày đến (Thông tin trung chuyển) 3
+        /// </summary>
+        public DateTime ngay_den_thong_tin_trung_chuyen_3 { get; set; }
+
+        /// <summary>
+        /// Ngày khởi hành (Thông tin trung chuyển) 3
+        /// </summary>
+        public DateTime ngay_khoi_hanh_thong_tin_trung_chuyen_3 { get; set; }
+
+        /// <summary>
+        /// Mã địa điểm (Địa điểm đích cho thuê vận chuyển bảo thuế)
+        /// </summary>
+        public string ma_dia_diem_dia_diem_dich_cho_thue_van_chuyen_bao_thue { get; set; }
+
+        /// <summary>
+        /// Ngày đến (Địa điểm đích cho thuê vận chuyển bảo thuế)
+        /// </summary>
+        public DateTime ngay_den_dia_diem_dich_cho_thue_van_chuyen_bao_thue { get; set; }
+
+        /// <summary>
+        /// Phần ghi chú
+        /// </summary>
+        public string phan_ghi_chu { get; set; }
+
+        /// <summary>
+        /// Số quản lý của nội bộ doanh nghiệp
+        /// </summary>
+        public string so_quan_ly_cua_noi_bo_doanh_nghiep { get; set; }
+
+        /// <summary>
+        /// Mã Địa điểm xếp hàng lên xe chở hàng 1
+        /// </summary>
+        public string ma_dia_diem_xep_hang_len_xe_cho_hang_1 { get; set; }
+
+        /// <summary>
+        /// Mã Địa điểm xếp hàng lên xe chở hàng 2
+        /// </summary>
+        public string ma_dia_diem_xep_hang_len_xe_cho_hang_2 { get; set; }
+
+        /// <summary>
+        /// Mã Địa điểm xếp hàng lên xe chở hàng 3
+        /// </summary>
+        public string ma_dia_diem_xep_hang_len_xe_cho_hang_3 { get; set; }
+
+        /// <summary>
+        /// Mã Địa điểm xếp hàng lên xe chở hàng 4
+        /// </summary>
+        public string ma_dia_diem_xep_hang_len_xe_cho_hang_4 { get; set; }
+
+        /// <summary>
+        /// Mã Địa điểm xếp hàng lên xe chở hàng 5
+        /// </summary>
+        public string ma_dia_diem_xep_hang_len_xe_cho_hang_5 { get; set; }
+
+        /// <summary>
+        /// Tên
+        /// </summary>
+        public string ten_dia_diem_xep_hang_len_xe { get; set; }
+
+        /// <summary>
+        /// Địa chỉ
+        /// </summary>
+        public string dia_chi_dia_diem_xep_hang_len_xe { get; set; }
+
+        /// <summary>
+        /// Số Container 1
+        /// </summary>
+        public string so_container_1 { get; set; }
+
+        /// <summary>
+        /// Số Container 2
+        /// </summary>
+        public string so_container_2 { get; set; }
+
+        /// <summary>
+        /// Số Container 3
+        /// </summary>
+        public string so_container_3 { get; set; }
+
+        /// <summary>
+        /// Số Container 4
+        /// </summary>
+        public string so_container_4 { get; set; }
+
+        /// <summary>
+        /// Số Container 5
+        /// </summary>
+        public string so_container_5 { get; set; }
+
+        /// <summary>
+        /// Số Container 6
+        /// </summary>
+        public string so_container_6 { get; set; }
+
+        /// <summary>
+        /// Số Container 7
+        /// </summary>
+        public string so_container_7 { get; set; }
+
+        /// <summary>
+        /// Số Container 8
+        /// </summary>
+        public string so_container_8 { get; set; }
+
+        /// <summary>
+        /// Số Container 9
+        /// </summary>
+        public string so_container_9 { get; set; }
+
+        /// <summary>
+        /// Số Container 10
+        /// </summary>
+        public string so_container_10 { get; set; }
     }
 }

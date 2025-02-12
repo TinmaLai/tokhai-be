@@ -70,7 +70,7 @@ app.UseAuthentication();
 app.UseAuthorization();
 //app.UseHttpsRedirection();
 
-app.MapHub<ExcelFormHub>("/chathub"); // Định nghĩa route cho SignalR
+//app.MapHub<ExcelFormHub>("api/chathub"); // Định nghĩa route cho SignalR
 
 app.MapControllers();
 

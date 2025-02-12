@@ -18,21 +18,21 @@ namespace z76_backend.Controllers
         {
             _service = service;
         }
-        [Authorize]
+        //[Authorize]
         [HttpGet]
         public async Task<ActionResult<IEnumerable<T>>> GetAll()
         {
             var result = await _service.GetAll();
             return Ok(result);
         }
-        [Authorize]
+        //[Authorize]
         [HttpGet("{id}")]
         public async Task<ActionResult<T>> GetById(Guid id)
         {
             var item = await _service.GetById(id);
             return item == null ? NotFound() : Ok(item);
         }
-        [Authorize]
+        //[Authorize]
         [HttpPost]
         public async Task<IActionResult> SaveEntity(SaveParameter<T> param)
         {
@@ -46,14 +46,14 @@ namespace z76_backend.Controllers
                     return Ok(false);
             }
         }
-        [Authorize]
+        //[Authorize]
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(Guid id)
         {
             var data = await _service.Delete(id);
             return Ok(data);
         }
-        [Authorize]
+        //[Authorize]
         [HttpPost("Paging")]
         public async Task<IActionResult> GetPaging(PagingParameter param)
         {
