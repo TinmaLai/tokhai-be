@@ -173,7 +173,7 @@ namespace z76_backend.Controllers
                                     {
                                         taxSheet.Cells[row, map.TaxCol].Value = detailVal;
                                     }
-                                    taxSheet.Cells[row, map.TaxCol].Style.Numberformat.Format = "#,##0.00";
+                                    taxSheet.Cells[row, map.TaxCol].Style.Numberformat.Format = "#,##0";
                                 }
                                 // Thiết lập border và căn lề
                                 taxSheet.Cells[row, map.TaxCol].Style.Border.Left.Style = ExcelBorderStyle.Thin;
@@ -238,7 +238,7 @@ namespace z76_backend.Controllers
                                     {
                                         taxSheet.Cells[row, compareMappings[j].TaxCol].Value = detailVal;
                                     }
-                                    taxSheet.Cells[row, compareMappings[j].TaxCol].Style.Numberformat.Format = "#,##0.00";
+                                    taxSheet.Cells[row, compareMappings[j].TaxCol].Style.Numberformat.Format = "#,##0";
                                 }
                             }
                             foreach (var map in mappings)
@@ -260,7 +260,7 @@ namespace z76_backend.Controllers
                                     {
                                         taxSheet.Cells[row, map.TaxCol].Value = detailVal;
                                     }
-                                    taxSheet.Cells[row, map.TaxCol].Style.Numberformat.Format = "#,##0.00";
+                                    taxSheet.Cells[row, map.TaxCol].Style.Numberformat.Format = "#,##0";
                                 }
                                 taxSheet.Cells[row, map.TaxCol].Style.Border.Left.Style = ExcelBorderStyle.Thin;
                                 taxSheet.Cells[row, map.TaxCol].Style.Border.Right.Style = ExcelBorderStyle.Thin;
@@ -308,7 +308,7 @@ namespace z76_backend.Controllers
                                             {
                                                 taxSheet.Cells[targetRow, map.TaxCol].Value = detailVal;
                                             }
-                                            taxSheet.Cells[targetRow, map.TaxCol].Style.Numberformat.Format = "#,##0.00";
+                                            taxSheet.Cells[targetRow, map.TaxCol].Style.Numberformat.Format = "#,##0";
                                         }
                                         // Nếu có lỗi tính tổng (errorGroup2) thì cập nhật lại màu cho cột 12, 14
                                         if (map.TaxCol == 12 && errorGroup1)
@@ -322,9 +322,16 @@ namespace z76_backend.Controllers
                                         }
                                     }
                                     // Nếu cần, copy thêm giá trị từ một số cột của dòng summary (ví dụ: cột 3,4,7)
+                                    taxSheet.Cells[row, 3]
+                                            .Copy(taxSheet.Cells[targetRow, 3]);
+                                    taxSheet.Cells[row, 4]
+                                            .Copy(taxSheet.Cells[targetRow, 4]);
+                                    taxSheet.Cells[row, 7]
+                                            .Copy(taxSheet.Cells[targetRow, 7]);
                                     taxSheet.Cells[targetRow, 3].Value = taxSheet.Cells[row, 3].Value;
                                     taxSheet.Cells[targetRow, 4].Value = taxSheet.Cells[row, 4].Value;
                                     taxSheet.Cells[targetRow, 7].Value = taxSheet.Cells[row, 7].Value;
+
                                 }
                                 row += (n - 1);
                                 originalRowCount += (n - 1);
