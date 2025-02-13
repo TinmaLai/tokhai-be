@@ -54,7 +54,9 @@ namespace z76_backend.Controllers
                 }
 
                 // Cấu hình căn lề, cột số,…
-                var numberColumns = new List<int> { 5, 10, 11, 12, 14 };
+                var numberColumns = new List<int> { 10, 11, 12, 14 };
+
+                var rightAlignColumns = new List<int> { 5, 10, 11, 12, 14 };
                 var centerAlignColumns = new List<int> { 2, 9, 13 };
                 var textColumns = new List<int> { 1, 2, 3, 4, 6, 7, 8, 9, 15 };
 
@@ -161,14 +163,25 @@ namespace z76_backend.Controllers
                                     taxSheet.Cells[row, map.TaxCol].Value = detailVal.Trim('%');
                                 else
                                     taxSheet.Cells[row, map.TaxCol].Value = detailVal;
-
+                                if (numberColumns.Contains(map.TaxCol))
+                                {
+                                    if (double.TryParse(detailVal, out double numberVal))
+                                    {
+                                        taxSheet.Cells[row, map.TaxCol].Value = numberVal;
+                                    }
+                                    else
+                                    {
+                                        taxSheet.Cells[row, map.TaxCol].Value = detailVal;
+                                    }
+                                    taxSheet.Cells[row, map.TaxCol].Style.Numberformat.Format = "#,##0.00";
+                                }
                                 // Thiết lập border và căn lề
                                 taxSheet.Cells[row, map.TaxCol].Style.Border.Left.Style = ExcelBorderStyle.Thin;
                                 taxSheet.Cells[row, map.TaxCol].Style.Border.Right.Style = ExcelBorderStyle.Thin;
                                 taxSheet.Cells[row, map.TaxCol].Style.Border.Left.Color.SetColor(Color.Black);
                                 taxSheet.Cells[row, map.TaxCol].Style.Border.Right.Color.SetColor(Color.Black);
 
-                                if (numberColumns.Contains(map.TaxCol))
+                                if (rightAlignColumns.Contains(map.TaxCol))
                                     taxSheet.Cells[row, map.TaxCol].Style.HorizontalAlignment = ExcelHorizontalAlignment.Right;
                                 else if (centerAlignColumns.Contains(map.TaxCol))
                                     taxSheet.Cells[row, map.TaxCol].Style.HorizontalAlignment = ExcelHorizontalAlignment.Center;
@@ -179,6 +192,7 @@ namespace z76_backend.Controllers
                         else // matchingRows.Count >= 2
                         {
                             int n = matchingRows.Count;
+                            bool errorGroup1 = false;
                             bool errorGroup2 = false;
                             double[] sums = new double[compareMappings.Length];
                             for (int i = 0; i < n; i++)
@@ -200,14 +214,32 @@ namespace z76_backend.Controllers
                                 double.TryParse(taxSheet.Cells[row, compareMappings[j].TaxCol].Text.Trim(), out origVal);
                                 if (Math.Abs(origVal - sums[j]) > 0.0001)
                                 {
-                                    errorGroup2 = true;
+                                    if(compareMappings[j].TaxCol == 12)
+                                    {
+                                        errorGroup1 = true;
+                                    } else if(compareMappings[j].TaxCol == 14)
+                                    {
+                                        errorGroup2 = true;
+                                    }
                                     taxSheet.Cells[row, compareMappings[j].TaxCol].Style.Fill.PatternType = ExcelFillStyle.Solid;
-                                    taxSheet.Cells[row, compareMappings[j].TaxCol].Style.Fill.BackgroundColor.SetColor(Color.LightCoral);
+                                    taxSheet.Cells[row, compareMappings[j].TaxCol].Style.Fill.BackgroundColor.SetColor(Color.LightCoral); // bôi đỏ
                                 }
                                 if (compareMappings[j].TaxCol == 13)
                                     taxSheet.Cells[row, compareMappings[j].TaxCol].Value = detailVal.Trim('%');
                                 else
                                     taxSheet.Cells[row, compareMappings[j].TaxCol].Value = detailVal;
+                                if (numberColumns.Contains(compareMappings[j].TaxCol))
+                                {
+                                    if (double.TryParse(detailVal, out double numberVal))
+                                    {
+                                        taxSheet.Cells[row, compareMappings[j].TaxCol].Value = numberVal;
+                                    }
+                                    else
+                                    {
+                                        taxSheet.Cells[row, compareMappings[j].TaxCol].Value = detailVal;
+                                    }
+                                    taxSheet.Cells[row, compareMappings[j].TaxCol].Style.Numberformat.Format = "#,##0.00";
+                                }
                             }
                             foreach (var map in mappings)
                             {
@@ -218,11 +250,23 @@ namespace z76_backend.Controllers
                                     taxSheet.Cells[row, map.TaxCol].Value = detailVal.Trim('%');
                                 else
                                     taxSheet.Cells[row, map.TaxCol].Value = detailVal;
+                                if (numberColumns.Contains(map.TaxCol))
+                                {
+                                    if (double.TryParse(detailVal, out double numberVal))
+                                    {
+                                        taxSheet.Cells[row, map.TaxCol].Value = numberVal;
+                                    }
+                                    else
+                                    {
+                                        taxSheet.Cells[row, map.TaxCol].Value = detailVal;
+                                    }
+                                    taxSheet.Cells[row, map.TaxCol].Style.Numberformat.Format = "#,##0.00";
+                                }
                                 taxSheet.Cells[row, map.TaxCol].Style.Border.Left.Style = ExcelBorderStyle.Thin;
                                 taxSheet.Cells[row, map.TaxCol].Style.Border.Right.Style = ExcelBorderStyle.Thin;
                                 taxSheet.Cells[row, map.TaxCol].Style.Border.Left.Color.SetColor(Color.Black);
                                 taxSheet.Cells[row, map.TaxCol].Style.Border.Right.Color.SetColor(Color.Black);
-                                if (numberColumns.Contains(map.TaxCol))
+                                if (rightAlignColumns.Contains(map.TaxCol))
                                     taxSheet.Cells[row, map.TaxCol].Style.HorizontalAlignment = ExcelHorizontalAlignment.Right;
                                 else if (centerAlignColumns.Contains(map.TaxCol))
                                     taxSheet.Cells[row, map.TaxCol].Style.HorizontalAlignment = ExcelHorizontalAlignment.Center;
@@ -231,37 +275,53 @@ namespace z76_backend.Controllers
                             }
                             if (n > 1)
                             {
+                                // Chèn các dòng detail mới
                                 taxSheet.InsertRow(row + 1, n - 1);
                                 for (int i = 1; i < n; i++)
                                 {
                                     int targetRow = row + i;
+
+                                    // Copy toàn bộ format, style từ dòng summary (row) sang dòng mới (targetRow)
+                                    // Lưu ý: nếu bạn có số cột cố định, có thể thay taxSheet.Dimension.Columns bằng số cột cụ thể.
+                                    //taxSheet.Cells[row, 1, row, taxSheet.Dimension.Columns]
+                                    //        .Copy(taxSheet.Cells[targetRow, 1, targetRow, taxSheet.Dimension.Columns]);
+
+                                    // Bind dữ liệu cho các cột theo mapping
                                     foreach (var map in mappings)
                                     {
                                         string detailVal = matchingRows[i].Length >= map.DetailCol
                                                             ? matchingRows[i][map.DetailCol - 1].Trim()
                                                             : "";
+                                        taxSheet.Cells[row, map.TaxCol]
+                                            .Copy(taxSheet.Cells[targetRow, map.TaxCol]);
                                         if (map.TaxCol == 13)
                                             taxSheet.Cells[targetRow, map.TaxCol].Value = detailVal.Trim('%');
                                         else
                                             taxSheet.Cells[targetRow, map.TaxCol].Value = detailVal;
-
-                                        if ((map.TaxCol == 12 || map.TaxCol == 14) && errorGroup2)
+                                        if (numberColumns.Contains(map.TaxCol))
+                                        {
+                                            if (double.TryParse(detailVal, out double numberVal))
+                                            {
+                                                taxSheet.Cells[targetRow, map.TaxCol].Value = numberVal;
+                                            }
+                                            else
+                                            {
+                                                taxSheet.Cells[targetRow, map.TaxCol].Value = detailVal;
+                                            }
+                                            taxSheet.Cells[targetRow, map.TaxCol].Style.Numberformat.Format = "#,##0.00";
+                                        }
+                                        // Nếu có lỗi tính tổng (errorGroup2) thì cập nhật lại màu cho cột 12, 14
+                                        if (map.TaxCol == 12 && errorGroup1)
+                                        {
+                                            taxSheet.Cells[targetRow, map.TaxCol].Style.Fill.PatternType = ExcelFillStyle.Solid;
+                                            taxSheet.Cells[targetRow, map.TaxCol].Style.Fill.BackgroundColor.SetColor(Color.LightCoral);
+                                        } else if(map.TaxCol == 14 && errorGroup2)
                                         {
                                             taxSheet.Cells[targetRow, map.TaxCol].Style.Fill.PatternType = ExcelFillStyle.Solid;
                                             taxSheet.Cells[targetRow, map.TaxCol].Style.Fill.BackgroundColor.SetColor(Color.LightCoral);
                                         }
-                                        taxSheet.Cells[targetRow, map.TaxCol].Style.Border.Left.Style = ExcelBorderStyle.Thin;
-                                        taxSheet.Cells[targetRow, map.TaxCol].Style.Border.Right.Style = ExcelBorderStyle.Thin;
-                                        taxSheet.Cells[targetRow, map.TaxCol].Style.Border.Left.Color.SetColor(Color.Black);
-                                        taxSheet.Cells[targetRow, map.TaxCol].Style.Border.Right.Color.SetColor(Color.Black);
-                                        if (numberColumns.Contains(map.TaxCol))
-                                            taxSheet.Cells[targetRow, map.TaxCol].Style.HorizontalAlignment = ExcelHorizontalAlignment.Right;
-                                        else if (centerAlignColumns.Contains(map.TaxCol))
-                                            taxSheet.Cells[targetRow, map.TaxCol].Style.HorizontalAlignment = ExcelHorizontalAlignment.Center;
-                                        else
-                                            taxSheet.Cells[targetRow, map.TaxCol].Style.HorizontalAlignment = ExcelHorizontalAlignment.Left;
                                     }
-                                    // Copy một số cột từ dòng Summary (ví dụ: cột 3,4,7)
+                                    // Nếu cần, copy thêm giá trị từ một số cột của dòng summary (ví dụ: cột 3,4,7)
                                     taxSheet.Cells[targetRow, 3].Value = taxSheet.Cells[row, 3].Value;
                                     taxSheet.Cells[targetRow, 4].Value = taxSheet.Cells[row, 4].Value;
                                     taxSheet.Cells[targetRow, 7].Value = taxSheet.Cells[row, 7].Value;
