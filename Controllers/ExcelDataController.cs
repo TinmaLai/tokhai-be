@@ -1,7 +1,9 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Data;
 using System.Drawing;
 using System.IO;
+using System.IO.Compression;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
@@ -22,12 +24,12 @@ namespace z76_backend.Controllers
         }
 
         /// <summary>
-        /// Nhận đầu vào là 2 file excel,
-        /// trong đó mảng con đầu tiên là header (tiêu đề cột).
-        /// Thực hiện merge dữ liệu theo cột "id" và trả về file Excel kết quả.
+        /// Nhận đầu vào 2 file Excel, thực hiện merge dữ liệu theo cột “id” (dựa trên Ký hiệu hóa đơn, Số hóa đơn, MST)
+        /// và tạo ra 2 file Excel:
+        ///   - Updated_Tax_Report.xlsx: file gốc sau merge (như code có sẵn)
+        ///   - Updated_Tax_Report_With_Status.xlsx: file trên được chèn thêm cột “Trạng thái hóa đơn” (lấy giá trị từ cột AB của detailFile)
+        /// Cuối cùng đóng gói 2 file Excel này vào 1 file zip trả về client.
         /// </summary>
-        /// <param name="request">Dữ liệu đầu vào gồm MasterData và DetailData</param>
-        /// <returns>File Excel đã merge</returns>
         [HttpPost("update")]
         public IActionResult UpdateExcel(IFormFile taxFile, IFormFile detailFile)
         {
@@ -39,7 +41,7 @@ namespace z76_backend.Controllers
                 // 1. Đọc dữ liệu từ file detail thành List<string[]>
                 var detailData = ReadExcelData(detailFile);
 
-                // 2. Tiền xử lý: xây dựng Dictionary với key = "Ký hiệu hóa đơn_ Số hóa đơn"
+                // 2. Tiền xử lý: xây dựng Dictionary với key = "Ký hiệu hóa đơn_ Số hóa đơn_ MST"
                 // (số hóa đơn được TrimStart('0'))
                 var detailDict = new Dictionary<string, List<string[]>>();
                 foreach (var row in detailData)
@@ -51,10 +53,20 @@ namespace z76_backend.Controllers
                     detailDict[key].Add(row);
                 }
 
+                // Cấu hình căn lề, cột số,…
                 var numberColumns = new List<int> { 5, 10, 11, 12, 14 };
-                var centerAlignColumns = new List<int> {2, 9, 13 };
-                var textColumns = new List<int> { 1,2,3,4,6,7,8,9,15 };
+                var centerAlignColumns = new List<int> { 2, 9, 13 };
+                var textColumns = new List<int> { 1, 2, 3, 4, 6, 7, 8, 9, 15 };
 
+                // Các biến dùng chung (sẽ dùng sau khi xử lý file gốc)
+                int headerRow = 0;
+                int startRow = 0;
+                int finalRowCount = 0;
+
+                // MemoryStream chứa file Excel gốc (đã merge)
+                MemoryStream msOriginal = new MemoryStream();
+
+                // --- PHẦN 1: XỬ LÝ TAXFILE (merge dữ liệu) ---
                 using (var taxPackage = new ExcelPackage(taxFile.OpenReadStream()))
                 {
                     // Lấy sheet đầu tiên không bị ẩn (nếu có)
@@ -62,11 +74,9 @@ namespace z76_backend.Controllers
                                    ?? taxPackage.Workbook.Worksheets[0];
 
                     int colCount = taxSheet.Dimension.Columns;
-
-                    // Lưu số dòng ban đầu của taxSheet (dòng gốc)
                     int originalRowCount = taxSheet.Dimension.Rows;
-                    // Tìm hàng có ô đầu tiên (cột 1) có giá trị "STT" (header)
-                    int headerRow = 0;
+
+                    // Tìm hàng header (ô đầu tiên có giá trị "STT")
                     for (int r = 1; r <= originalRowCount; r++)
                     {
                         if (taxSheet.Cells[r, 1].Text.Trim().Equals("STT", StringComparison.OrdinalIgnoreCase))
@@ -75,23 +85,27 @@ namespace z76_backend.Controllers
                             break;
                         }
                     }
+                    var totalRowCount = 0;
+                    // Điều chỉnh số dòng nếu gặp dòng "TỔNG CỘNG"
                     for (int r = 1; r <= originalRowCount; r++)
                     {
                         if (taxSheet.Cells[r, 6].Text.Trim().Equals("TỔNG CỘNG", StringComparison.OrdinalIgnoreCase))
                         {
-                            originalRowCount = originalRowCount - (originalRowCount - r - 2);
+                            originalRowCount = originalRowCount - (originalRowCount - r + 2);
                             break;
                         }
                     }
-                    // Nếu không tìm thấy, mặc định headerRow = 1, và dữ liệu bắt đầu từ hàng 2
-                    int startRow = headerRow > 0 ? headerRow + 1 : 19;
+                    // Xác định startRow (dòng bắt đầu dữ liệu)
+                    startRow = headerRow > 0 ? headerRow + 1 : 19;
+
+                    // Định nghĩa mapping giữa cột TaxFile và DetailFile
                     var mappings = new (int TaxCol, int DetailCol)[]
                     {
                         (2, 1),   // Mẫu số hóa đơn
                         (5, 4),   // Ngày tháng năm: TaxFile cột5 <-- DetailFile cột4
                         (6, 10),  // Tên người bán: TaxFile cột6 <-- DetailFile cột10
                         (7, 11),  // MST người bán: TaxFile cột7 <-- DetailFile cột11
-                        (8, 17),  // Tên hàng hóa DV: TaxFile cột8 <-- DetailFile cột17
+                        (8, 17),  // Tên hàng hóa/DV: TaxFile cột8 <-- DetailFile cột17
                         (9, 18),  // Đơn vị tính: TaxFile cột9 <-- DetailFile cột18
                         (10, 19), // Số lượng: TaxFile cột10 <-- DetailFile cột19
                         (11, 20), // Đơn giá: TaxFile cột11 <-- DetailFile cột20
@@ -99,14 +113,19 @@ namespace z76_backend.Controllers
                         (13, 22), // Thuế suất: TaxFile cột13 <-- DetailFile cột22
                         (14, 24)  // Tiền thuế: TaxFile cột14 <-- DetailFile cột24
                     };
-                    // Duyệt qua các dòng (bỏ qua header ở dòng 1)
+
+                    // Tính trước các mapping dùng cho cột 12 và 14 để so sánh tổng
+                    var compareMappings = mappings.Where(x => x.TaxCol == 12 || x.TaxCol == 14).ToArray();
+
+                    // Duyệt qua các dòng dữ liệu (bỏ qua header)
                     for (int row = startRow + 2; row <= originalRowCount; row++)
                     {
-                        if (taxSheet.Cells[row, 17].Text.Trim() == "3.")
-                        {
-                            continue; // Bỏ qua dòng này nếu giá trị ô Q bằng "3."
-                        }
+                        // Lưu lại giá trị cần dùng nhiều lần
+                        string cellQ = taxSheet.Cells[row, 17].Text.Trim();
+                        if (cellQ == "3.")
+                            continue;
 
+                        // Xây dựng key từ các cột: invoiceSymbol (cột 3), invoiceNumber (cột 4) và taxCode (cột 7)
                         string invoiceSymbol = taxSheet.Cells[row, 3].Text.Trim();
                         string invoiceNumber = taxSheet.Cells[row, 4].Text.Trim().TrimStart('0');
                         string taxCode = taxSheet.Cells[row, 7].Text.Trim();
@@ -114,299 +133,253 @@ namespace z76_backend.Controllers
 
                         if (!detailDict.TryGetValue(key, out var matchingRows))
                         {
-                            // Không tìm thấy matching detail: tô màu vàng toàn dòng, cập nhật trạng thái
+                            // Không có matching detail: tô màu vàng toàn dòng
                             taxSheet.Cells[row, 1, row, colCount].Style.Fill.PatternType = ExcelFillStyle.Solid;
-                            taxSheet.Cells[row, 1, row, colCount].Style.Fill.BackgroundColor.SetColor(System.Drawing.Color.Yellow);
+                            taxSheet.Cells[row, 1, row, colCount].Style.Fill.BackgroundColor.SetColor(Color.LemonChiffon);
                         }
                         else if (matchingRows.Count == 1)
                         {
-                            // TRƯỜNG HỢP 1: chỉ có 1 dòng match
-                            // Định nghĩa mapping cho cả Group 1 và Group 2
-                            // Mỗi phần tử là (TaxCol, DetailCol)
-                            
-
-                            bool hasError = false;
-                            // Với 1 match, ta luôn so sánh dòng đó với matchingRows[0]
+                            // Trường hợp chỉ có 1 dòng match
                             foreach (var map in mappings.Where(x => x.TaxCol == 12 || x.TaxCol == 14))
                             {
-                                // 22 23
-                                // Lấy giá trị của ô từ matchingRows[0]
                                 string detailVal = matchingRows[0].Length >= map.DetailCol
                                                      ? matchingRows[0][map.DetailCol - 1].Trim()
                                                      : "";
-                                // Lấy giá trị gốc của TaxFile
                                 string original = taxSheet.Cells[row, map.TaxCol].Text.Trim();
-                                // Nếu giá trị thay đổi thì đánh dấu màu đỏ
                                 if (!string.Equals(original, detailVal, StringComparison.OrdinalIgnoreCase))
                                 {
                                     taxSheet.Cells[row, map.TaxCol].Style.Fill.PatternType = ExcelFillStyle.Solid;
-                                    taxSheet.Cells[row, map.TaxCol].Style.Fill.BackgroundColor.SetColor(System.Drawing.Color.Red);
-                                    
-                                    hasError = true;
+                                    taxSheet.Cells[row, map.TaxCol].Style.Fill.BackgroundColor.SetColor(Color.LightCoral);
                                 }
                             }
                             foreach (var map in mappings)
                             {
-                                // 22 23
-                                // Lấy giá trị của ô từ matchingRows[0]
                                 string detailVal = matchingRows[0].Length >= map.DetailCol
                                                      ? matchingRows[0][map.DetailCol - 1].Trim()
                                                      : "";
-                                // Lấy giá trị gốc của TaxFile
-                                string original = taxSheet.Cells[row, map.TaxCol].Text.Trim();
-                                // Bind giá trị mới vào ô TaxFile
-                                taxSheet.Cells[row, map.TaxCol].Value = detailVal;
-                                if (map.TaxCol == 13) taxSheet.Cells[row, map.TaxCol].Value = detailVal.Trim('%');
-                                // Thêm border cho bên trái và bên phải của ô B2
+                                if (map.TaxCol == 13)
+                                    taxSheet.Cells[row, map.TaxCol].Value = detailVal.Trim('%');
+                                else
+                                    taxSheet.Cells[row, map.TaxCol].Value = detailVal;
+
+                                // Thiết lập border và căn lề
                                 taxSheet.Cells[row, map.TaxCol].Style.Border.Left.Style = ExcelBorderStyle.Thin;
                                 taxSheet.Cells[row, map.TaxCol].Style.Border.Right.Style = ExcelBorderStyle.Thin;
-
-                                // (Tùy chọn) Đặt màu cho border nếu cần
                                 taxSheet.Cells[row, map.TaxCol].Style.Border.Left.Color.SetColor(Color.Black);
                                 taxSheet.Cells[row, map.TaxCol].Style.Border.Right.Color.SetColor(Color.Black);
-                                if (numberColumns.Exists(x => x == map.TaxCol))
-                                {
-                                    taxSheet.Cells[row, map.TaxCol].Style.HorizontalAlignment = ExcelHorizontalAlignment.Right; // Căn phải nếu là số
-                                }
-                                else if (centerAlignColumns.Exists(x => x == map.TaxCol))
-                                {
-                                    taxSheet.Cells[row, map.TaxCol].Style.HorizontalAlignment = ExcelHorizontalAlignment.Center; // Căn phải nếu là số
-                                }
+
+                                if (numberColumns.Contains(map.TaxCol))
+                                    taxSheet.Cells[row, map.TaxCol].Style.HorizontalAlignment = ExcelHorizontalAlignment.Right;
+                                else if (centerAlignColumns.Contains(map.TaxCol))
+                                    taxSheet.Cells[row, map.TaxCol].Style.HorizontalAlignment = ExcelHorizontalAlignment.Center;
                                 else
-                                {
-                                    taxSheet.Cells[row, map.TaxCol].Style.HorizontalAlignment = ExcelHorizontalAlignment.Left; // Căn trái nếu là chữ
-                                }
+                                    taxSheet.Cells[row, map.TaxCol].Style.HorizontalAlignment = ExcelHorizontalAlignment.Left;
                             }
                         }
                         else // matchingRows.Count >= 2
                         {
                             int n = matchingRows.Count;
-                            bool errorGroup1 = false;
                             bool errorGroup2 = false;
-
-                            // --- Phần Summary (dòng gốc) ---
-                            // Group 1: mapping từ matchingRows[0]
-                            //var mappingsGroup1 = new (int TaxCol, int DetailCol)[]
-                            //{
-                            //    (5, 4), (6, 10), (7, 11), (8, 17), (9, 18)
-                            //};
-                            //foreach (var map in mappingsGroup1)
-                            //{
-                            //    string original = taxSheet.Cells[row, map.TaxCol].Text.Trim();
-                            //    string detailVal = matchingRows[0].Length >= map.DetailCol
-                            //                         ? matchingRows[0][map.DetailCol - 1].Trim()
-                            //                         : "";
-                            //    taxSheet.Cells[row, map.TaxCol].Value = detailVal;
-                            //    if (!string.Equals(original, detailVal, StringComparison.OrdinalIgnoreCase) && (map.TaxCol == 12 || map.TaxCol == 14))
-                            //        errorGroup1 = true;
-                            //    if (!string.Equals(original, detailVal, StringComparison.OrdinalIgnoreCase) && (map.TaxCol == 12 || map.TaxCol == 14))
-                            //    {
-                            //        // Đánh dấu ô theo giá trị từ matchingRows[0]
-                            //        taxSheet.Cells[row, map.TaxCol].Style.Fill.PatternType = ExcelFillStyle.Solid;
-                            //        taxSheet.Cells[row, map.TaxCol].Style.Fill.BackgroundColor.SetColor(System.Drawing.Color.Red);
-                            //        // Thêm border cho bên trái và bên phải của ô B2
-                            //        taxSheet.Cells[row, map.TaxCol].Style.Border.Left.Style = ExcelBorderStyle.Thin;
-                            //        taxSheet.Cells[row, map.TaxCol].Style.Border.Right.Style = ExcelBorderStyle.Thin;
-
-                            //        // (Tùy chọn) Đặt màu cho border nếu cần
-                            //        taxSheet.Cells[row, map.TaxCol].Style.Border.Left.Color.SetColor(Color.Black);
-                            //        taxSheet.Cells[row, map.TaxCol].Style.Border.Right.Color.SetColor(Color.Black);
-                            //    }
-                            //}
-                            //foreach (var map in mappingsGroup1)
-                            //{
-                            //    string original = taxSheet.Cells[row, map.TaxCol].Text.Trim();
-                            //    string detailVal = matchingRows[0].Length >= map.DetailCol
-                            //                         ? matchingRows[0][map.DetailCol - 1].Trim()
-                            //                         : "";
-                            //    taxSheet.Cells[row, map.TaxCol].Value = detailVal;
-                            //    if (!string.Equals(original, detailVal, StringComparison.OrdinalIgnoreCase) && (map.TaxCol == 12 || map.TaxCol == 14))
-                            //        errorGroup1 = true;
-                            //    if (!string.Equals(original, detailVal, StringComparison.OrdinalIgnoreCase) && (map.TaxCol == 12 || map.TaxCol == 14))
-                            //    {
-                            //        // Đánh dấu ô theo giá trị từ matchingRows[0]
-                            //        taxSheet.Cells[row, map.TaxCol].Style.Fill.PatternType = ExcelFillStyle.Solid;
-                            //        taxSheet.Cells[row, map.TaxCol].Style.Fill.BackgroundColor.SetColor(System.Drawing.Color.Red);
-                            //        // Thêm border cho bên trái và bên phải của ô B2
-                            //        taxSheet.Cells[row, map.TaxCol].Style.Border.Left.Style = ExcelBorderStyle.Thin;
-                            //        taxSheet.Cells[row, map.TaxCol].Style.Border.Right.Style = ExcelBorderStyle.Thin;
-
-                            //        // (Tùy chọn) Đặt màu cho border nếu cần
-                            //        taxSheet.Cells[row, map.TaxCol].Style.Border.Left.Color.SetColor(Color.Black);
-                            //        taxSheet.Cells[row, map.TaxCol].Style.Border.Right.Color.SetColor(Color.Black);
-                            //    }
-                            //}
-                            // Group 2: so sánh với tổng các dòng detail, nhưng bind giá trị từ matchingRows[0]
-                            //var mappingsGroup2 = new (int TaxCol, int DetailCol)[]
-                            //{
-                            //    (10, 19), (11, 20), (12, 23), (13, 22), (14, 24)
-                            //};
-                            var compareMappings = mappings.Where(x => x.TaxCol == 12 || x.TaxCol == 14).ToArray();
-                            
                             double[] sums = new double[compareMappings.Length];
                             for (int i = 0; i < n; i++)
                             {
-                                for (int j = 0; j < compareMappings.Where(x => x.TaxCol == 12 || x.TaxCol == 14).ToArray().Length; j++)
+                                for (int j = 0; j < compareMappings.Length; j++)
                                 {
                                     double val = 0;
-                                    double.TryParse(matchingRows[i].Length >= compareMappings[j].DetailCol ? matchingRows[i][compareMappings[j].DetailCol - 1] : "0", out val);
+                                    if (matchingRows[i].Length >= compareMappings[j].DetailCol)
+                                        double.TryParse(matchingRows[i][compareMappings[j].DetailCol - 1], out val);
                                     sums[j] += val;
                                 }
                             }
                             for (int j = 0; j < compareMappings.Length; j++)
                             {
-                                string original = taxSheet.Cells[row, compareMappings[j].TaxCol].Text.Trim();
                                 string detailVal = matchingRows[0].Length >= compareMappings[j].DetailCol
                                                      ? matchingRows[0][compareMappings[j].DetailCol - 1].Trim()
                                                      : "";
-                                taxSheet.Cells[row, compareMappings[j].TaxCol].Value = detailVal; // bind từ matchingRows[0]
-                                if (compareMappings[j].TaxCol == 13) taxSheet.Cells[row, compareMappings[j].TaxCol].Value = detailVal.Trim('%');
-
                                 double origVal = 0;
-                                double.TryParse(original, out origVal);
+                                double.TryParse(taxSheet.Cells[row, compareMappings[j].TaxCol].Text.Trim(), out origVal);
                                 if (Math.Abs(origVal - sums[j]) > 0.0001)
                                 {
                                     errorGroup2 = true;
-
                                     taxSheet.Cells[row, compareMappings[j].TaxCol].Style.Fill.PatternType = ExcelFillStyle.Solid;
-                                    taxSheet.Cells[row, compareMappings[j].TaxCol].Style.Fill.BackgroundColor.SetColor(System.Drawing.Color.Red);
-                                    
+                                    taxSheet.Cells[row, compareMappings[j].TaxCol].Style.Fill.BackgroundColor.SetColor(Color.LightCoral);
                                 }
-                            }
-                            for (int j = 0; j < mappings.Length; j++)
-                            {
-                                string original = taxSheet.Cells[row, mappings[j].TaxCol].Text.Trim();
-                                string detailVal = matchingRows[0].Length >= mappings[j].DetailCol
-                                                     ? matchingRows[0][mappings[j].DetailCol - 1].Trim()
-                                                     : "";
-                                taxSheet.Cells[row, mappings[j].TaxCol].Value = detailVal; // bind từ matchingRows[0]
-                                if (mappings[j].TaxCol == 13) taxSheet.Cells[row, mappings[j].TaxCol].Value = detailVal.Trim('%');
-
-                                // Thêm border cho bên trái và bên phải của ô B2
-                                taxSheet.Cells[row, mappings[j].TaxCol].Style.Border.Left.Style = ExcelBorderStyle.Thin;
-                                taxSheet.Cells[row, mappings[j].TaxCol].Style.Border.Right.Style = ExcelBorderStyle.Thin;
-
-                                // (Tùy chọn) Đặt màu cho border nếu cần
-                                taxSheet.Cells[row, mappings[j].TaxCol].Style.Border.Left.Color.SetColor(Color.Black);
-                                taxSheet.Cells[row, mappings[j].TaxCol].Style.Border.Right.Color.SetColor(Color.Black);
-                                if (numberColumns.Exists(x => x == mappings[j].TaxCol))
-                                {
-                                    taxSheet.Cells[row, mappings[j].TaxCol].Style.HorizontalAlignment = ExcelHorizontalAlignment.Right; // Căn phải nếu là số
-                                }
-                                else if (centerAlignColumns.Exists(x => x == mappings[j].TaxCol))
-                                {
-                                    taxSheet.Cells[row, mappings[j].TaxCol].Style.HorizontalAlignment = ExcelHorizontalAlignment.Center; // Căn phải nếu là số
-                                }
+                                if (compareMappings[j].TaxCol == 13)
+                                    taxSheet.Cells[row, compareMappings[j].TaxCol].Value = detailVal.Trim('%');
                                 else
-                                {
-                                    taxSheet.Cells[row, mappings[j].TaxCol].Style.HorizontalAlignment = ExcelHorizontalAlignment.Left; // Căn trái nếu là chữ
-                                }
+                                    taxSheet.Cells[row, compareMappings[j].TaxCol].Value = detailVal;
                             }
-
-                            // --- Phần Chi tiết: chèn các dòng detail ---
-                            // Với 1 dòng TaxFile khớp với n dòng detail, chèn (n - 1) dòng bên dưới dòng Summary.
-                            for (int i = 1; i < n; i++)
+                            foreach (var map in mappings)
                             {
-                                taxSheet.InsertRow(row + i, 1);
-                                // Group 1: copy giá trị từ dòng detail tương ứng (DetailFile: cột 4,10,11,17,18)
-                                //foreach (var map in mappingsGroup1)
-                                //{
-                                //    string detailVal = matchingRows[i].Length >= map.DetailCol
-                                //        ? matchingRows[i][map.DetailCol - 1].Trim()
-                                //        : "";
-                                //    taxSheet.Cells[row + i, map.TaxCol].Value = detailVal;
-
-                                //    if (map.TaxCol == 12 || map.TaxCol == 14)
-                                //    {
-                                //        taxSheet.Cells[row + i, map.TaxCol].Style.Fill.PatternType = ExcelFillStyle.Solid;
-                                //        taxSheet.Cells[row + i, map.TaxCol].Style.Fill.BackgroundColor.SetColor(System.Drawing.Color.Red);
-                                //        // Thêm border cho bên trái và bên phải của ô B2
-                                //        taxSheet.Cells[row + i, map.TaxCol].Style.Border.Left.Style = ExcelBorderStyle.Thin;
-                                //        taxSheet.Cells[row + i, map.TaxCol].Style.Border.Right.Style = ExcelBorderStyle.Thin;
-
-                                //        // (Tùy chọn) Đặt màu cho border nếu cần
-                                //        taxSheet.Cells[row + i, map.TaxCol].Style.Border.Left.Color.SetColor(Color.Black);
-                                //        taxSheet.Cells[row + i, map.TaxCol].Style.Border.Right.Color.SetColor(Color.Black);
-                                //    }
-                                //}
-                                // Group 2: copy trực tiếp giá trị của dòng detail tương ứng (DetailFile: cột 19,20,23,22,24)
-                                foreach (var map in mappings)
-                                {
-                                    string detailVal = matchingRows[i].Length >= map.DetailCol
-                                        ? matchingRows[i][map.DetailCol - 1].Trim()
-                                        : "";
-                                    taxSheet.Cells[row + i, map.TaxCol].Value = detailVal;
-                                    if (map.TaxCol == 13) taxSheet.Cells[row, map.TaxCol].Value = detailVal.Trim('%');
-
-                                    if ((map.TaxCol == 12 || map.TaxCol == 14) && errorGroup2 == true)
-                                    {
-                                        taxSheet.Cells[row + i, map.TaxCol].Style.Fill.PatternType = ExcelFillStyle.Solid;
-                                        taxSheet.Cells[row + i, map.TaxCol].Style.Fill.BackgroundColor.SetColor(System.Drawing.Color.Red);
-                                        
-                                    }
-                                    // Thêm border cho bên trái và bên phải của ô B2
-                                    taxSheet.Cells[row + i, map.TaxCol].Style.Border.Left.Style = ExcelBorderStyle.Thin;
-                                    taxSheet.Cells[row + i, map.TaxCol].Style.Border.Right.Style = ExcelBorderStyle.Thin;
-
-                                    // (Tùy chọn) Đặt màu cho border nếu cần
-                                    taxSheet.Cells[row + i, map.TaxCol].Style.Border.Left.Color.SetColor(Color.Black);
-                                    taxSheet.Cells[row + i, map.TaxCol].Style.Border.Right.Color.SetColor(Color.Black);
-                                    if (numberColumns.Exists(x => x == map.TaxCol))
-                                    {
-                                        taxSheet.Cells[row + i, map.TaxCol].Style.HorizontalAlignment = ExcelHorizontalAlignment.Right; // Căn phải nếu là số
-                                    }
-                                    else if (centerAlignColumns.Exists(x => x == map.TaxCol))
-                                    {
-                                        taxSheet.Cells[row + i, map.TaxCol].Style.HorizontalAlignment = ExcelHorizontalAlignment.Center; // Căn phải nếu là số
-                                    }
-                                    else
-                                    {
-                                        taxSheet.Cells[row + i, map.TaxCol].Style.HorizontalAlignment = ExcelHorizontalAlignment.Left; // Căn trái nếu là chữ
-                                    }
-                                }
-
-                                // --- Mới: Ở các dòng chi tiết, lấy giá trị ở ô 2,3,4 của dòng gốc (Summary) 
-                                // để đưa vào ô 2,3,4 của dòng chi tiết.
-                                taxSheet.Cells[row + i, 3].Value = taxSheet.Cells[row, 3].Value;
-                                taxSheet.Cells[row + i, 4].Value = taxSheet.Cells[row, 4].Value;
-                                taxSheet.Cells[row + i, 7].Value = taxSheet.Cells[row, 7].Value;
+                                string detailVal = matchingRows[0].Length >= map.DetailCol
+                                                     ? matchingRows[0][map.DetailCol - 1].Trim()
+                                                     : "";
+                                if (map.TaxCol == 13)
+                                    taxSheet.Cells[row, map.TaxCol].Value = detailVal.Trim('%');
+                                else
+                                    taxSheet.Cells[row, map.TaxCol].Value = detailVal;
+                                taxSheet.Cells[row, map.TaxCol].Style.Border.Left.Style = ExcelBorderStyle.Thin;
+                                taxSheet.Cells[row, map.TaxCol].Style.Border.Right.Style = ExcelBorderStyle.Thin;
+                                taxSheet.Cells[row, map.TaxCol].Style.Border.Left.Color.SetColor(Color.Black);
+                                taxSheet.Cells[row, map.TaxCol].Style.Border.Right.Color.SetColor(Color.Black);
+                                if (numberColumns.Contains(map.TaxCol))
+                                    taxSheet.Cells[row, map.TaxCol].Style.HorizontalAlignment = ExcelHorizontalAlignment.Right;
+                                else if (centerAlignColumns.Contains(map.TaxCol))
+                                    taxSheet.Cells[row, map.TaxCol].Style.HorizontalAlignment = ExcelHorizontalAlignment.Center;
+                                else
+                                    taxSheet.Cells[row, map.TaxCol].Style.HorizontalAlignment = ExcelHorizontalAlignment.Left;
                             }
+                            if (n > 1)
+                            {
+                                taxSheet.InsertRow(row + 1, n - 1);
+                                for (int i = 1; i < n; i++)
+                                {
+                                    int targetRow = row + i;
+                                    foreach (var map in mappings)
+                                    {
+                                        string detailVal = matchingRows[i].Length >= map.DetailCol
+                                                            ? matchingRows[i][map.DetailCol - 1].Trim()
+                                                            : "";
+                                        if (map.TaxCol == 13)
+                                            taxSheet.Cells[targetRow, map.TaxCol].Value = detailVal.Trim('%');
+                                        else
+                                            taxSheet.Cells[targetRow, map.TaxCol].Value = detailVal;
 
-                            // Bỏ qua các dòng vừa chèn trong vòng lặp ngoài
-                            row += (n - 1);
-                            originalRowCount += (n - 1);
+                                        if ((map.TaxCol == 12 || map.TaxCol == 14) && errorGroup2)
+                                        {
+                                            taxSheet.Cells[targetRow, map.TaxCol].Style.Fill.PatternType = ExcelFillStyle.Solid;
+                                            taxSheet.Cells[targetRow, map.TaxCol].Style.Fill.BackgroundColor.SetColor(Color.LightCoral);
+                                        }
+                                        taxSheet.Cells[targetRow, map.TaxCol].Style.Border.Left.Style = ExcelBorderStyle.Thin;
+                                        taxSheet.Cells[targetRow, map.TaxCol].Style.Border.Right.Style = ExcelBorderStyle.Thin;
+                                        taxSheet.Cells[targetRow, map.TaxCol].Style.Border.Left.Color.SetColor(Color.Black);
+                                        taxSheet.Cells[targetRow, map.TaxCol].Style.Border.Right.Color.SetColor(Color.Black);
+                                        if (numberColumns.Contains(map.TaxCol))
+                                            taxSheet.Cells[targetRow, map.TaxCol].Style.HorizontalAlignment = ExcelHorizontalAlignment.Right;
+                                        else if (centerAlignColumns.Contains(map.TaxCol))
+                                            taxSheet.Cells[targetRow, map.TaxCol].Style.HorizontalAlignment = ExcelHorizontalAlignment.Center;
+                                        else
+                                            taxSheet.Cells[targetRow, map.TaxCol].Style.HorizontalAlignment = ExcelHorizontalAlignment.Left;
+                                    }
+                                    // Copy một số cột từ dòng Summary (ví dụ: cột 3,4,7)
+                                    taxSheet.Cells[targetRow, 3].Value = taxSheet.Cells[row, 3].Value;
+                                    taxSheet.Cells[targetRow, 4].Value = taxSheet.Cells[row, 4].Value;
+                                    taxSheet.Cells[targetRow, 7].Value = taxSheet.Cells[row, 7].Value;
+                                }
+                                row += (n - 1);
+                                originalRowCount += (n - 1);
+                            }
                         }
-                    } // end for duyệt các dòng taxSheet
-
-                    // --- Đánh số thứ tự tăng dần cho tất cả các dòng dữ liệu ---
-                    // Chèn cột mới ở vị trí đầu để chứa STT
-                    int finalRowCount = taxSheet.Dimension.Rows;
+                    }
+                    for (int r = 1; r <= taxSheet.Dimension.Rows; r++)
+                    {
+                        if (taxSheet.Cells[r, 6].Text.Trim().Equals("TỔNG CỘNG", StringComparison.OrdinalIgnoreCase))
+                        {
+                            totalRowCount = taxSheet.Dimension.Rows - r;
+                            break;
+                        }
+                    }
+                    // --- Đánh số thứ tự (STT) cho các dòng dữ liệu ---
+                    finalRowCount = taxSheet.Dimension.Rows - totalRowCount - 2;
                     int order = 1;
                     for (int r = startRow + 2; r <= finalRowCount; r++)
                     {
                         taxSheet.Cells[r, 1].Value = order++;
-                        // Căn giữa nội dung trong ô A1 theo chiều ngang
                         taxSheet.Cells[r, 1].Style.HorizontalAlignment = ExcelHorizontalAlignment.Center;
-                        // Thêm border cho bên trái và bên phải của ô B2
                         taxSheet.Cells[r, 1].Style.Border.Left.Style = ExcelBorderStyle.Thin;
                         taxSheet.Cells[r, 1].Style.Border.Right.Style = ExcelBorderStyle.Thin;
-
-                        // (Tùy chọn) Đặt màu cho border nếu cần
                         taxSheet.Cells[r, 1].Style.Border.Left.Color.SetColor(Color.Black);
                         taxSheet.Cells[r, 1].Style.Border.Right.Color.SetColor(Color.Black);
-
                     }
 
-                    // Xuất file Excel đã cập nhật
-                    var stream = new MemoryStream();
-                    taxPackage.SaveAs(stream);
-                    stream.Position = 0;
-                    return File(
-                        stream,
-                        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                        "Updated_Tax_Report.xlsx"
-                    );
+                    // Lưu file Excel đã cập nhật vào MemoryStream
+                    taxPackage.SaveAs(msOriginal);
+                    msOriginal.Position = 0;
+                } // end using taxPackage
+
+                // --- PHẦN 2: TẠO FILE EXCEL VỚI CỘT "TRẠNG THÁI HÓA ĐƠN" ---
+                // Ở file này, ta sẽ chèn thêm 1 cột ở vị trí đầu tiên và cập nhật giá trị từ detailFile (cột AB, tương đương cột 28)
+                MemoryStream msStatus = new MemoryStream();
+                using (var taxStatusPackage = new ExcelPackage(new MemoryStream(msOriginal.ToArray())))
+                {
+                    // Lấy sheet đầu tiên không bị ẩn (nếu có)
+                    var taxStatusSheet = taxStatusPackage.Workbook.Worksheets.FirstOrDefault(ws => ws.Hidden == eWorkSheetHidden.Visible)
+                                   ?? taxStatusPackage.Workbook.Worksheets[0];
+                    // Chèn 1 cột mới vào vị trí cột 1
+                    taxStatusSheet.InsertColumn(1, 1);
+
+                    // Merge ô header của cột mới (ô (headerRow, 1)) với ô bên dưới (headerRow+1, 1)
+                    taxStatusSheet.Cells[headerRow, 1, headerRow + 1, 1].Merge = true;
+                    taxStatusSheet.Cells[headerRow, 1, headerRow + 1, 1].Value = "Trạng thái hóa đơn";
+                    // Căn giữa nội dung theo chiều ngang và dọc
+                    taxStatusSheet.Cells[headerRow, 1, headerRow + 1, 1].Style.HorizontalAlignment = ExcelHorizontalAlignment.Center;
+                    taxStatusSheet.Cells[headerRow, 1, headerRow + 1, 1].Style.VerticalAlignment = ExcelVerticalAlignment.Center;
+
+                    // Bôi đậm chữ
+                    taxStatusSheet.Cells[headerRow, 1, headerRow + 1, 1].Style.Font.Bold = true;
+                    // border
+                    taxStatusSheet.Cells[headerRow, 1, headerRow + 1, 1].Style.Border.Left.Style = ExcelBorderStyle.Thin;
+                    taxStatusSheet.Cells[headerRow, 1, headerRow + 1, 1].Style.Border.Right.Style = ExcelBorderStyle.Thin;
+                    taxStatusSheet.Cells[headerRow, 1, headerRow + 1, 1].Style.Border.Top.Style = ExcelBorderStyle.Thin;
+                    taxStatusSheet.Cells[headerRow, 1, headerRow + 1, 1].Style.Border.Bottom.Style = ExcelBorderStyle.Thin;
+
+                    taxStatusSheet.Cells[headerRow, 1, headerRow + 1, 1].Style.Border.Left.Color.SetColor(Color.Black);
+                    taxStatusSheet.Cells[headerRow, 1, headerRow + 1, 1].Style.Border.Right.Color.SetColor(Color.Black);
+                    taxStatusSheet.Cells[headerRow, 1, headerRow + 1, 1].Style.Border.Top.Color.SetColor(Color.Black);
+                    taxStatusSheet.Cells[headerRow, 1, headerRow + 1, 1].Style.Border.Bottom.Color.SetColor(Color.Black);
+                    // Set lại background của ô merge về màu trắng (tránh hiện mặc định màu xám)
+                    taxStatusSheet.Cells[headerRow, 1, headerRow + 1, 1].Style.Fill.PatternType = ExcelFillStyle.Solid;
+                    taxStatusSheet.Cells[headerRow, 1, headerRow + 1, 1].Style.Fill.BackgroundColor.SetColor(Color.White);
+
+                    // Vì đã chèn cột mới, các cột dữ liệu gốc bị dịch sang phải:
+                    //   invoiceSymbol: từ cột 3 -> cột 4
+                    //   invoiceNumber: từ cột 4 -> cột 5
+                    //   taxCode:      từ cột 7 -> cột 8
+                    int sheetFinalRow = taxStatusSheet.Dimension.Rows;
+                    for (int row = startRow + 2; row <= sheetFinalRow; row++)
+                    {
+                        string invoiceSymbol = taxStatusSheet.Cells[row, 4].Text.Trim();
+                        string invoiceNumber = taxStatusSheet.Cells[row, 5].Text.Trim().TrimStart('0');
+                        string taxCode = taxStatusSheet.Cells[row, 8].Text.Trim();
+                        var key = $"{invoiceSymbol}_{invoiceNumber}_{taxCode}";
+
+                        if (detailDict.TryGetValue(key, out var matchingRows) && matchingRows.Count > 0)
+                        {
+                            // Lấy giá trị ở cột AB (tức cột 28) của detailFile (array index 27)
+                            string status = matchingRows[0].Length >= 28 ? matchingRows[0][27].Trim() : "";
+                            taxStatusSheet.Cells[row, 1].Value = status;
+                        }
+                        else
+                        {
+                            taxStatusSheet.Cells[row, 1].Value = "";
+                        }
+                    }
+                    taxStatusPackage.SaveAs(msStatus);
+                    msStatus.Position = 0;
                 }
+
+                // --- PHẦN 3: ĐÓNG GÓI 2 FILE EXCEL VÀO 1 FILE ZIP ---
+                MemoryStream zipStream = new MemoryStream();
+                using (var archive = new ZipArchive(zipStream, ZipArchiveMode.Create, true))
+                {
+                    // Thêm file Excel gốc
+                    var entry1 = archive.CreateEntry("Updated_Tax_Report.xlsx");
+                    using (var entryStream = entry1.Open())
+                    {
+                        msOriginal.CopyTo(entryStream);
+                    }
+                    msOriginal.Position = 0;
+
+                    // Thêm file Excel có cột "Trạng thái hóa đơn"
+                    var entry2 = archive.CreateEntry("Updated_Tax_Report_With_Status.xlsx");
+                    using (var entryStream = entry2.Open())
+                    {
+                        msStatus.CopyTo(entryStream);
+                    }
+                }
+                zipStream.Position = 0;
+
+                return File(zipStream, "application/octet-stream", "Updated_Tax_Reports.zip");
             }
             catch (Exception ex)
             {
