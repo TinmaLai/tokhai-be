@@ -8,7 +8,7 @@ namespace z76_backend.Services
         Task<IEnumerable<T>> GetAll();
         Task<T> GetById(Guid id);
         Task<int> Add(T entity);
-        Task<int> Update(IEnumerable<T> records);
+        Task<int> Update(IEnumerable<T> records, string field);
         Task<int> Delete(Guid id);
         /// <summary>
         /// Lấy dữ liệu theo phân trang và filter
@@ -19,5 +19,19 @@ namespace z76_backend.Services
         /// <returns></returns>
         Task<PagingResult> GetPagingAsync(string filters, int take, int limit);
         Task<object> GetPagingSummaryAsync(string filters);
+        /// <summary>
+        /// Lấy dữ liệu theo filter, dạng filter:
+        /// [
+        ///     {
+        ///         Field = Tên trường,
+        ///         Value = Giá trị
+        ///         Operator = Dấu so sánh
+        ///     }
+        /// ]
+        /// </summary>
+        /// <param name="filters"></param>
+        /// <returns></returns>
+        Task<List<T>> GetAsync(List<FilterCondition> filters);
+
     }
 }

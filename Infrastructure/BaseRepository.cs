@@ -13,16 +13,17 @@ using System.Numerics;
 using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
+using z76_backend.Enums;
 using z76_backend.Models;
 
 namespace z76_backend.Infrastructure
 {
-    public class BaseRepository<T> where T : class
+    public class BaseRepository<T> : IBaseRepository<T>
     {
         protected readonly string _connectionString;
-        public BaseRepository(string connection)
+        public BaseRepository(IConfiguration configuration)
         {
-            _connectionString = connection;
+            _connectionString = configuration.GetConnectionString("DefaultConnection"); ;
         }
         private string GetTableName()
         {
@@ -34,6 +35,11 @@ namespace z76_backend.Infrastructure
             return typeof(T)
                 .GetProperties()
                 .FirstOrDefault(p => p.GetCustomAttribute<KeyAttribute>() != null);
+        }
+        public static PropertyInfo? GetPropertyValue<T>(string propertyName)
+        {
+            return typeof(T).GetProperty(propertyName);
+            
         }
         public async Task<IEnumerable<T>> GetAll()
         {
@@ -69,7 +75,7 @@ namespace z76_backend.Infrastructure
             return await connection.ExecuteAsync(insertQuery, parameters);
         }
 
-        public async Task<int> Update(IEnumerable<T> records)
+        public async Task<int> Update(IEnumerable<T> records, string field)
         {
             using var connection = new MySqlConnection(_connectionString);
             string tableName = GetTableName();
@@ -88,10 +94,10 @@ namespace z76_backend.Infrastructure
                 // Xây dựng câu lệnh SQL động
                 var setClause = string.Join(", ", insertFields.Select(f => $"{f} = @{f}{i}"));
 
-                var keyProp = GetKeyProperty<T>();
-                var id = keyProp.GetValue(record);
-                parameters.Add($"Id{i}", id);
-                updateBatchQuery.Append($"UPDATE {tableName} SET {setClause} WHERE {keyProp.Name} = @Id{i};");
+                var fieldProp = GetPropertyValue<T>(field);
+                var fieldValue = fieldProp.GetValue(record);
+                parameters.Add($"{field}{i}", fieldValue);
+                updateBatchQuery.Append($"UPDATE {tableName} SET {setClause} WHERE {field} = @{field}{i};");
                 i++;
             }
             var effects = await connection.ExecuteAsync(updateBatchQuery.ToString(), parameters);
@@ -243,6 +249,64 @@ namespace z76_backend.Infrastructure
             {
                 Total = result
             };
+        }
+        /// <summary>
+        /// Lấy dữ liệu theo filter
+        /// </summary>
+        /// <param name="filters"></param>
+        /// <param name="take"></param>
+        /// <param name="limit"></param>
+        /// <returns></returns>
+        /// <exception cref="ArgumentException"></exception>
+        public async Task<List<T>> GetAsync(List<FilterCondition> filters)
+        {
+            using var connection = new MySqlConnection(_connectionString);
+            string tableName = GetTableName();
+
+            var whereClauses = new List<string>();
+            var parameters = new DynamicParameters();
+
+            // Xây dựng câu WHERE từ filters
+            if (filters != null)
+            {
+                foreach (var filter in filters)
+                {
+                    string paramName = $"@{filter.Field}_{whereClauses.Count}";
+
+                    // Kiểm tra toán tử có hợp lệ không
+                    string operatorSymbol = filter.Operator;
+
+                    // Kiểm tra và parse kiểu DateTime
+                    object value = filter.Value;
+                    if (value is string stringValue && DateTime.TryParse(stringValue, out var parsedDate))
+                    {
+                        value = parsedDate;
+                    }
+
+                    // Thêm vào câu WHERE
+                    whereClauses.Add($"{filter.Field} {operatorSymbol} {paramName}");
+
+                    if (operatorSymbol == FilterOperator.Contains || operatorSymbol == FilterOperator.NotContains)
+                    {
+                        parameters.Add(paramName, $"%{value}%");
+                    }
+                    else
+                    {
+                        parameters.Add(paramName, value);
+                    }
+                }
+            }
+
+            // Xây dựng câu SQL
+            var sql = new StringBuilder($"SELECT * FROM {tableName}");
+            if (whereClauses.Any())
+            {
+                sql.Append(" WHERE " + string.Join(" AND ", whereClauses));
+            }
+
+            // Thực hiện truy vấn
+            var result = await connection.QueryAsync<T>(sql.ToString(), parameters);
+            return result.ToList();
         }
     }
 }

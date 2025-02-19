@@ -8,10 +8,10 @@ namespace z76_backend.Services
 {
     public abstract class BaseService<T> : IBaseService<T> where T : class
     {
-        private readonly BaseRepository<T> _repository;
+        private readonly IBaseRepository<T> _repository;
         public BaseService(IConfiguration _configuration)
         {
-            _repository = new BaseRepository<T>(_configuration.GetConnectionString("DefaultConnection"));
+            _repository = new BaseRepository<T>(_configuration);
         }
 
         public async Task<IEnumerable<T>> GetAll()
@@ -29,9 +29,9 @@ namespace z76_backend.Services
             return await _repository.Add(entity);
         }
 
-        public async Task<int> Update(IEnumerable<T> records)
+        public async Task<int> Update(IEnumerable<T> records, string field)
         {
-            return await _repository.Update(records);
+            return await _repository.Update(records, field);
         }
 
         public async Task<int> Delete(Guid id)
@@ -54,6 +54,15 @@ namespace z76_backend.Services
             if (filterConditions != null)
             {
                 return await _repository.GetPagingSummaryAsync(filterConditions);
+            }
+            return null;
+        }
+        public async Task<List<T>> GetAsync(List<FilterCondition> filters)
+        {
+            //var filterConditions = JsonConvert.DeserializeObject<List<FilterCondition>>(filters);
+            if (filters != null)
+            {
+                return await _repository.GetAsync(filters);
             }
             return null;
         }

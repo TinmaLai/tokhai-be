@@ -13,6 +13,11 @@ builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+// Đọc cấu hình JWT
+var jwtSettings = builder.Configuration.GetSection("JwtSettings");
+var secretKey = jwtSettings.GetValue<string>("SecretKey");
+var issuer = jwtSettings.GetValue<string>("Issuer");
+var audience = jwtSettings.GetValue<string>("Audience");
 builder.Services.AddControllers()
     .AddJsonOptions(options =>
     {
@@ -29,7 +34,6 @@ builder.Services.AddCors(options =>
                .SetIsOriginAllowed(origin => true);
     });
 });
-var key = "super-secret-keysuper-secret-keysuper-secret-keysuper-secret-keysuper-secret-keysuper-secret-keysuper-secret-keysuper-secret-keysuper-secret-keysuper-secret-keysuper-secret-keysuper-secret-keysuper-secret-keysuper-secret-keysuper-secret-keysuper-secret-keysuper-secret-keysuper-secret-keysuper-secret-keysuper-secret-keysuper-secret-keysuper-secret-keysuper-secret-keysuper-secret-keysuper-secret-keysuper-secret-keysuper-secret-keysuper-secret-keysuper-secret-keysuper-secret-keysuper-secret-keysuper-secret-keysuper-secret-keysuper-secret-keysuper-secret-keysuper-secret-keysuper-secret-keysuper-secret-keysuper-secret-keysuper-secret-keysuper-secret-keysuper-secret-keysuper-secret-keysuper-secret-keysuper-secret-keysuper-secret-keysuper-secret-keysuper-secret-keysuper-secret-keysuper-secret-keysuper-secret-keysuper-secret-keysuper-secret-keysuper-secret-keysuper-secret-keysuper-secret-keysuper-secret-keysuper-secret-keysuper-secret-keysuper-secret-keysuper-secret-keysuper-secret-keysuper-secret-keysuper-secret-keysuper-secret-keysuper-secret-keysuper-secret-keysuper-secret-keysuper-secret-keysuper-secret-keysuper-secret-keysuper-secret-keysuper-secret-keysuper-secret-keysuper-secret-keysuper-secret-keysuper-secret-keysuper-secret-keysuper-secret-keysuper-secret-keysuper-secret-keysuper-secret-keysuper-secret-keysuper-secret-keysuper-secret-keysuper-secret-keysuper-secret-keysuper-secret-keysuper-secret-keysuper-secret-keysuper-secret-keysuper-secret-keysuper-secret-keysuper-secret-keysuper-secret-keysuper-secret-keysuper-secret-keysuper-secret-keysuper-secret-keysuper-secret-keysuper-secret-keysuper-secret-keysuper-secret-keysuper-secret-keysuper-secret-keysuper-secret-keysuper-secret-keysuper-secret-keysuper-secret-keysuper-secret-keysuper-secret-keysuper-secret-keysuper-secret-keysuper-secret-keysuper-secret-keysuper-secret-keysuper-secret-keysuper-secret-keysuper-secret-keysuper-secret-keysuper-secret-keysuper-secret-keysuper-secret-key";
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
@@ -39,9 +43,9 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ValidateAudience = true,
             ValidateLifetime = true,
             ValidateIssuerSigningKey = true,
-            ValidIssuer = "https://localhost:7152/api",
-            ValidAudience = "https://localhost:7152/api",
-            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(key))
+            ValidIssuer = issuer,
+            ValidAudience = audience,
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey))
         };
     });
 builder.Services.AddAuthorization();
@@ -52,6 +56,11 @@ builder.Services.AddScoped(typeof(BaseRepository<>));
 
 // Regis Service
 builder.Services.AddScoped<IExportDeclarationService, ExportDeclarationService>();
+builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddScoped<IStockCardService, StockCardService>();
+builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped(typeof(IBaseRepository<>), typeof(BaseRepository<>));
+
 
 var app = builder.Build();
 app.UseDefaultFiles();

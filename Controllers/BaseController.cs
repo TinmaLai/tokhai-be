@@ -33,19 +33,19 @@ namespace z76_backend.Controllers
             return item == null ? NotFound() : Ok(item);
         }
         //[Authorize]
-        [HttpPost]
-        public async Task<IActionResult> SaveEntity(SaveParameter<T> param)
-        {
-            switch (param.mode)
-            {
-                case (int)ModeEnum.ADD:
-                    return Ok(await _service.Add(param.record));
-                case (int)ModeEnum.UPDATE:
-                    return Ok(await _service.Update(param.records));
-                default:
-                    return Ok(false);
-            }
-        }
+        //[HttpPost]
+        //public async Task<IActionResult> SaveEntity(SaveParameter<T> param)
+        //{
+        //    switch (param.mode)
+        //    {
+        //        case (int)ModeEnum.ADD:
+        //            return Ok(await _service.Add(param.record));
+        //        case (int)ModeEnum.UPDATE:
+        //            return Ok(await _service.Update(param.records));
+        //        default:
+        //            return Ok(false);
+        //    }
+        //}
         //[Authorize]
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(Guid id)
