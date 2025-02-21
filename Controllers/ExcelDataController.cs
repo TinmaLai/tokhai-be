@@ -139,7 +139,7 @@ namespace z76_backend.Controllers
                         {
                             // Không có matching detail: tô màu vàng toàn dòng
                             taxSheet.Cells[row, 1, row, colCount].Style.Fill.PatternType = ExcelFillStyle.Solid;
-                            taxSheet.Cells[row, 1, row, colCount].Style.Fill.BackgroundColor.SetColor(Color.LemonChiffon);
+                            taxSheet.Cells[row, 1, row, colCount].Style.Fill.BackgroundColor.SetColor(Color.FromArgb(255, 255, 0));
                         }
                         else if (matchingRows.Count == 1)
                         {
@@ -153,7 +153,7 @@ namespace z76_backend.Controllers
                                 if (!string.Equals(original, detailVal, StringComparison.OrdinalIgnoreCase))
                                 {
                                     taxSheet.Cells[row, map.TaxCol].Style.Fill.PatternType = ExcelFillStyle.Solid;
-                                    taxSheet.Cells[row, map.TaxCol].Style.Fill.BackgroundColor.SetColor(Color.LightCoral);
+                                    taxSheet.Cells[row, map.TaxCol].Style.Fill.BackgroundColor.SetColor(Color.FromArgb(240, 128, 128));
                                 }
                             }
                             foreach (var map in mappings)
@@ -224,7 +224,7 @@ namespace z76_backend.Controllers
                                         errorGroup2 = true;
                                     }
                                     taxSheet.Cells[row, compareMappings[j].TaxCol].Style.Fill.PatternType = ExcelFillStyle.Solid;
-                                    taxSheet.Cells[row, compareMappings[j].TaxCol].Style.Fill.BackgroundColor.SetColor(Color.LightCoral); // bôi đỏ
+                                    taxSheet.Cells[row, compareMappings[j].TaxCol].Style.Fill.BackgroundColor.SetColor(Color.FromArgb(240, 128, 128)); // bôi đỏ
                                 }
                                 if (compareMappings[j].TaxCol == 13)
                                     taxSheet.Cells[row, compareMappings[j].TaxCol].Value = detailVal.Trim('%');
@@ -316,11 +316,11 @@ namespace z76_backend.Controllers
                                         if (map.TaxCol == 12 && errorGroup1)
                                         {
                                             taxSheet.Cells[targetRow, map.TaxCol].Style.Fill.PatternType = ExcelFillStyle.Solid;
-                                            taxSheet.Cells[targetRow, map.TaxCol].Style.Fill.BackgroundColor.SetColor(Color.LightCoral);
+                                            taxSheet.Cells[targetRow, map.TaxCol].Style.Fill.BackgroundColor.SetColor(Color.FromArgb(240, 128, 128));
                                         } else if(map.TaxCol == 14 && errorGroup2)
                                         {
                                             taxSheet.Cells[targetRow, map.TaxCol].Style.Fill.PatternType = ExcelFillStyle.Solid;
-                                            taxSheet.Cells[targetRow, map.TaxCol].Style.Fill.BackgroundColor.SetColor(Color.LightCoral);
+                                            taxSheet.Cells[targetRow, map.TaxCol].Style.Fill.BackgroundColor.SetColor(Color.FromArgb(240, 128, 128));
                                         }
                                     }
                                     // Nếu cần, copy thêm giá trị từ một số cột của dòng summary (ví dụ: cột 3,4,7)
