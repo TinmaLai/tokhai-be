@@ -1,6 +1,9 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Newtonsoft.Json;
+using System.ComponentModel.DataAnnotations;
 using System.Diagnostics.Eventing.Reader;
+using System.Reflection;
 using z76_backend.Enums;
 using z76_backend.Infrastructure;
 using z76_backend.Models;
@@ -33,19 +36,23 @@ namespace z76_backend.Controllers
             return item == null ? NotFound() : Ok(item);
         }
         //[Authorize]
-        //[HttpPost]
-        //public async Task<IActionResult> SaveEntity(SaveParameter<T> param)
-        //{
-        //    switch (param.mode)
-        //    {
-        //        case (int)ModeEnum.ADD:
-        //            return Ok(await _service.Add(param.record));
-        //        case (int)ModeEnum.UPDATE:
-        //            return Ok(await _service.Update(param.records));
-        //        default:
-        //            return Ok(false);
-        //    }
-        //}
+        [HttpPost]
+        public async Task<IActionResult> SaveEntity(SaveParameter<T> param)
+        {
+            
+            switch (param.mode)
+            {
+                case (int)ModeEnum.ADD:
+                    return Ok(await _service.Add(param.record));
+                case (int)ModeEnum.UPDATE:
+                    var keyProperty = typeof(T)
+                    .GetProperties()
+                    .FirstOrDefault(prop => prop.GetCustomAttribute<KeyAttribute>() != null).ToString();
+                    return Ok(await _service.Update(param.records, keyProperty));
+                default:
+                    return Ok(false);
+            }
+        }
         //[Authorize]
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(Guid id)
@@ -69,6 +76,14 @@ namespace z76_backend.Controllers
                     return Ok();
             }
             
+        }
+        //[Authorize]
+        [HttpPost("Filter")]
+        public async Task<IActionResult> GetByFilters(FilterParam param)
+        {
+            var filterConditions = JsonConvert.DeserializeObject<List<FilterCondition>>(param.filters);
+            var data = await _service.GetAsync(filterConditions);
+            return Ok(data);
         }
     }
 

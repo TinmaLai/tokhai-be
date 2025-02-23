@@ -41,11 +41,12 @@ namespace z76_backend.Infrastructure
             return typeof(T).GetProperty(propertyName);
             
         }
-        public async Task<IEnumerable<T>> GetAll()
+        public async Task<List<T>> GetAll()
         {
             using var connection = new MySqlConnection(_connectionString);
             string tableName = GetTableName();
-            return await connection.QueryAsync<T>($"SELECT * FROM {tableName}");
+            var data = await connection.QueryAsync<T>($"SELECT * FROM {tableName}");
+            return data.ToList();
         }
 
         public async Task<T> GetById(Guid id)
@@ -63,7 +64,28 @@ namespace z76_backend.Infrastructure
             var insertFields = new List<string>();
             var properties = typeof(T).GetProperties();
             var parameters = new DynamicParameters();
+            // Lấy property có attribute [Key] trong object
+            var keyProperty = typeof(T)
+                .GetProperties()
+                .FirstOrDefault(prop => Attribute.IsDefined(prop, typeof(KeyAttribute)));
 
+            if (keyProperty != null && keyProperty.CanWrite && (record.GetType().GetProperty(keyProperty.Name).GetValue(record) == null || record.GetType().GetProperty(keyProperty.Name).GetValue(record).ToString() == Guid.Empty.ToString()))
+            {
+                // Nếu kiểu của property là Guid
+                if (keyProperty.PropertyType == typeof(Guid))
+                {
+                    keyProperty.SetValue(record, Guid.NewGuid());
+                }
+                // Nếu kiểu của property là string, gán Guid dưới dạng chuỗi
+                else if (keyProperty.PropertyType == typeof(string))
+                {
+                    keyProperty.SetValue(record, Guid.NewGuid().ToString());
+                }
+                else
+                {
+                    throw new InvalidOperationException("Key property phải có kiểu Guid hoặc string.");
+                }
+            }
             foreach (var property in properties)
             {
                 insertFields.Add(property.Name);
@@ -85,6 +107,10 @@ namespace z76_backend.Infrastructure
             var i = 0;
             foreach (var record in records)
             {
+                if(typeof(T) == typeof(UserEntity))
+                {
+                    properties = properties.Where(x => x.Name != nameof(UserEntity.username) && x.Name != nameof(UserEntity.password)).ToArray();
+                }
                 var insertFields = new List<string>();
                 foreach (var property in properties)
                 {
@@ -299,6 +325,56 @@ namespace z76_backend.Infrastructure
 
             // Xây dựng câu SQL
             var sql = new StringBuilder($"SELECT * FROM {tableName}");
+            if (whereClauses.Any())
+            {
+                sql.Append(" WHERE " + string.Join(" AND ", whereClauses));
+            }
+
+            // Thực hiện truy vấn
+            var result = await connection.QueryAsync<T>(sql.ToString(), parameters);
+            return result.ToList();
+        }
+        public async Task<List<T>> DeleteAsync(List<FilterCondition> filters)
+        {
+            using var connection = new MySqlConnection(_connectionString);
+            string tableName = GetTableName();
+
+            var whereClauses = new List<string>();
+            var parameters = new DynamicParameters();
+
+            // Xây dựng câu WHERE từ filters
+            if (filters != null)
+            {
+                foreach (var filter in filters)
+                {
+                    string paramName = $"@{filter.Field}_{whereClauses.Count}";
+
+                    // Kiểm tra toán tử có hợp lệ không
+                    string operatorSymbol = filter.Operator;
+
+                    // Kiểm tra và parse kiểu DateTime
+                    object value = filter.Value;
+                    if (value is string stringValue && DateTime.TryParse(stringValue, out var parsedDate))
+                    {
+                        value = parsedDate;
+                    }
+
+                    // Thêm vào câu WHERE
+                    whereClauses.Add($"{filter.Field} {operatorSymbol} {paramName}");
+
+                    if (operatorSymbol == FilterOperator.Contains || operatorSymbol == FilterOperator.NotContains)
+                    {
+                        parameters.Add(paramName, $"%{value}%");
+                    }
+                    else
+                    {
+                        parameters.Add(paramName, value);
+                    }
+                }
+            }
+
+            // Xây dựng câu SQL
+            var sql = new StringBuilder($"DELETE FROM {tableName}");
             if (whereClauses.Any())
             {
                 sql.Append(" WHERE " + string.Join(" AND ", whereClauses));

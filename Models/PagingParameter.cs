@@ -7,4 +7,8 @@
         public int limit { get; set; }
         public int type { get; set; }
     }
+    public class FilterParam
+    {
+        public string filters { get; set; }
+    }
 }

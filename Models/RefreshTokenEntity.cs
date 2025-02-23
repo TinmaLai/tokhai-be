@@ -13,6 +13,8 @@
     {
         public string username { get; set; }
         public string password { get; set; }
+        public string full_name { get; set; }
+        public string stock_manage { get; set; }
     }
 
     public class LoginParam

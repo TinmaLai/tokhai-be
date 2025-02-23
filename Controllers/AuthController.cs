@@ -21,13 +21,15 @@ public class AuthController : ControllerBase
     private readonly IAuthService _authService;
     private readonly IServiceProvider _serviceProvider;
     private readonly IBaseRepository<RefreshTokenEntity> _repo;
+    private readonly IConfiguration _configuration;
 
-    public AuthController(IServiceProvider serviceProvider, IAuthService service, IBaseRepository<RefreshTokenEntity> refreshTokenRepository)
+    public AuthController(IServiceProvider serviceProvider, IAuthService service, IBaseRepository<RefreshTokenEntity> refreshTokenRepository, IConfiguration configuration)
     {
         _serviceProvider = serviceProvider;
         _authService = _serviceProvider.GetRequiredService<IAuthService>();
         _userService = _serviceProvider.GetRequiredService<IUserService>();
         _repo = refreshTokenRepository;
+        _configuration = configuration;
     }
 
     // Đăng ký người dùng mới
@@ -49,10 +51,16 @@ public class AuthController : ControllerBase
             {
                 user_id = Guid.NewGuid(),
                 username = request.username,
-                password = ComputeHash(request.password)
+                password = ComputeHash(request.password),
+                full_name = request.full_name,
+                stock_manage = request.stock_manage
             };
             var addUserStatus = await _userService.Add(user);
-            return Ok("Đăng ký thành công.");
+            return Ok(new
+            {
+                Data = user,
+                Message = "Tạo mới người dùng thành công"
+            });
         } else
         {
             return BadRequest("Tài khoản đã tồn tại trong hệ thống!");
@@ -63,6 +71,9 @@ public class AuthController : ControllerBase
     [HttpPost("login")]
     public async Task<IActionResult> Login([FromBody] LoginParam request)
     {
+        var jwtSettings = _configuration.GetSection("JwtSettings");
+        var expirationMinutes = jwtSettings.GetValue<int>("AccessTokenExpirationMinutes");
+
         var users = await _userService.GetAsync(new List<FilterCondition>()
         {
             new FilterCondition()
@@ -72,9 +83,12 @@ public class AuthController : ControllerBase
                 Operator = FilterOperator.Equal
             }
         });
-        if (users == null || users[0].password != ComputeHash(request.password))
+        if (users == null || users?.Count == 0 || users[0].password != ComputeHash(request.password))
         {
-            return Unauthorized("Sai tài khoản hoặc mật khẩu");
+            return Unauthorized(new
+            {
+                Message = "Sai tài khoản hoặc mật khẩu"
+            });
         }
 
         // Tạo access token
@@ -95,14 +109,21 @@ public class AuthController : ControllerBase
 
         return Ok(new
         {
+            user_id = users[0].user_id,
+            username = users[0].username,
+            full_name = users[0].full_name,
+            stock_manage = users[0].stock_manage,
             AccessToken = accessToken,
-            RefreshToken = refreshTokenData.Token
+            RefreshToken = refreshTokenData.Token,
+            expires_in = expirationMinutes
         });
     }
     // Refresh token
     [HttpPost("refresh-token")]
     public async Task<IActionResult> Refresh([FromBody] RefreshParam request)
     {
+        var jwtSettings = _configuration.GetSection("JwtSettings");
+        var expirationMinutes = jwtSettings.GetValue<int>("AccessTokenExpirationMinutes");
         var tokens = await _repo.GetAsync(new List<FilterCondition>()
         {
             new FilterCondition()
@@ -144,7 +165,8 @@ public class AuthController : ControllerBase
         return Ok(new
         {
             AccessToken = newAccessToken,
-            RefreshToken = newRefreshTokenData.Token
+            RefreshToken = newRefreshTokenData.Token,
+            expire_ins = expirationMinutes
         });
     }
     // Đăng xuất: Thu hồi refresh token
@@ -161,17 +183,32 @@ public class AuthController : ControllerBase
             }
         });
         var currentRefreshToken = refreshTokens.FirstOrDefault();
-        await _repo.Update(new List<RefreshTokenEntity>()
+        await _repo.DeleteAsync(new List<FilterCondition>()
         {
-            new RefreshTokenEntity()
+            new FilterCondition()
             {
-                user_id = currentRefreshToken?.user_id ?? Guid.Empty,
-                created = currentRefreshToken?.created ?? DateTime.Now,
-                expires = currentRefreshToken?.expires ?? DateTime.Now,
-                token = request.RefreshToken,
-                is_revoked = true
+                Field = nameof(RefreshTokenEntity.user_id),
+                Value = currentRefreshToken?.user_id ?? Guid.Empty,
+                Operator = FilterOperator.Equal
+            },
+            new FilterCondition()
+            {
+                Field = nameof(RefreshTokenEntity.token),
+                Value = request.RefreshToken,
+                Operator = FilterOperator.Equal
             }
-        }, "token");
+        });
+        //await _repo.Update(new List<RefreshTokenEntity>()
+        //{
+        //    new RefreshTokenEntity()
+        //    {
+        //        user_id = currentRefreshToken?.user_id ?? Guid.Empty,
+        //        created = currentRefreshToken?.created ?? DateTime.Now,
+        //        expires = currentRefreshToken?.expires ?? DateTime.Now,
+        //        token = request.RefreshToken,
+        //        is_revoked = true
+        //    }
+        //}, "token");
         return Ok("Logged out successfully.");
     }
 
