@@ -24,13 +24,21 @@ namespace z76_backend.Services
             return await _repository.GetById(id);
         }
 
-        public async Task<int> Add(T entity)
+        public async Task<int> Add(List<T> entities)
         {
-            return await _repository.Add(entity);
+            if(entities?.Count == 0)
+            {
+                return 0;
+            }
+            return await _repository.Add(entities);
         }
 
-        public async Task<int> Update(IEnumerable<T> records, string field)
+        public async Task<int> Update(List<T> records, string field)
         {
+            if (records?.Count == 0)
+            {
+                return 0;
+            }
             return await _repository.Update(records, field);
         }
 

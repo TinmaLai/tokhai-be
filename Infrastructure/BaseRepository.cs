@@ -57,47 +57,69 @@ namespace z76_backend.Infrastructure
             return await connection.QueryFirstOrDefaultAsync<T>($"SELECT * FROM {tableName} WHERE {keyProp.Name} = @Id", new { Id = id });
         }
 
-        public async Task<int> Add(T record)
+        public async Task<int> Add(List<T> records)
         {
+            if (records == null || records.Count == 0)
+            {
+                throw new ArgumentException("Danh sách records không được rỗng.");
+            }
+
             using var connection = new MySqlConnection(_connectionString);
             string tableName = GetTableName();
             var insertFields = new List<string>();
             var properties = typeof(T).GetProperties();
-            var parameters = new DynamicParameters();
-            // Lấy property có attribute [Key] trong object
-            var keyProperty = typeof(T)
-                .GetProperties()
-                .FirstOrDefault(prop => Attribute.IsDefined(prop, typeof(KeyAttribute)));
 
-            if (keyProperty != null && keyProperty.CanWrite && (record.GetType().GetProperty(keyProperty.Name).GetValue(record) == null || record.GetType().GetProperty(keyProperty.Name).GetValue(record).ToString() == Guid.Empty.ToString()))
+            // Xác định cột khóa chính (Key)
+            var keyProperty = properties.FirstOrDefault(prop => Attribute.IsDefined(prop, typeof(KeyAttribute)));
+
+            if (keyProperty == null)
             {
-                // Nếu kiểu của property là Guid
-                if (keyProperty.PropertyType == typeof(Guid))
-                {
-                    keyProperty.SetValue(record, Guid.NewGuid());
-                }
-                // Nếu kiểu của property là string, gán Guid dưới dạng chuỗi
-                else if (keyProperty.PropertyType == typeof(string))
-                {
-                    keyProperty.SetValue(record, Guid.NewGuid().ToString());
-                }
-                else
-                {
-                    throw new InvalidOperationException("Key property phải có kiểu Guid hoặc string.");
-                }
+                throw new InvalidOperationException("Không tìm thấy cột khóa chính.");
             }
-            foreach (var property in properties)
-            {
-                insertFields.Add(property.Name);
-                parameters.Add($"{property.Name}", property.GetValue(record));
-            }
+
+            insertFields = properties.Select(p => p.Name).ToList();
 
             var insertQuery = @$"INSERT INTO {tableName} ({string.Join(",", insertFields)}) 
-                VALUES (@{string.Join(",@", insertFields)});";
-            return await connection.ExecuteAsync(insertQuery, parameters);
+                         VALUES ({string.Join(",", insertFields.Select(f => "@" + f))});";
+
+            var parametersList = new List<DynamicParameters>();
+
+            foreach (var record in records)
+            {
+                var parameters = new DynamicParameters();
+
+                // Nếu cột khóa chính chưa có giá trị, gán giá trị mới
+                var keyValue = keyProperty.GetValue(record);
+                if (keyValue == null || keyValue.ToString() == Guid.Empty.ToString())
+                {
+                    if (keyProperty.PropertyType == typeof(Guid))
+                    {
+                        keyProperty.SetValue(record, Guid.NewGuid());
+                    }
+                    else if (keyProperty.PropertyType == typeof(string))
+                    {
+                        keyProperty.SetValue(record, Guid.NewGuid().ToString());
+                    }
+                    else
+                    {
+                        throw new InvalidOperationException("Key property phải có kiểu Guid hoặc string.");
+                    }
+                }
+
+                // Thêm dữ liệu của bản ghi vào parameters
+                foreach (var property in properties)
+                {
+                    parameters.Add($"@{property.Name}", property.GetValue(record));
+                }
+
+                parametersList.Add(parameters);
+            }
+
+            // Thực thi chèn nhiều bản ghi cùng lúc
+            return await connection.ExecuteAsync(insertQuery, parametersList);
         }
 
-        public async Task<int> Update(IEnumerable<T> records, string field)
+        public async Task<int> Update(List<T> records, string field)
         {
             using var connection = new MySqlConnection(_connectionString);
             string tableName = GetTableName();

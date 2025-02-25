@@ -1,8 +1,12 @@
-﻿namespace z76_backend.Models
+﻿using System.ComponentModel.DataAnnotations;
+
+namespace z76_backend.Models
 {
-    [TableName("RefreshToken")]
+    [TableName("refresh_token")]
     public class RefreshTokenEntity
     {
+        [Key]
+        public Guid id { get; set; }
         public Guid user_id { get; set; }
         public string token { get; set; }
         public DateTime expires { get; set; }

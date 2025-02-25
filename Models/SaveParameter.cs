@@ -10,6 +10,6 @@
         /// update or insert?
         /// </summary>
         public int mode { get; set; }
-        public IEnumerable<T>? records { get; set; }
+        public List<T>? records { get; set; }
     }
 }

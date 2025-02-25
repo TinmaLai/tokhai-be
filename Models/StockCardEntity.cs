@@ -2,12 +2,12 @@
 
 namespace z76_backend.Models
 {
-    [TableName("StockCard")]
+    [TableName("stock_card")]
     public class StockCardEntity
     {
         [Key]
         public Guid id { get; set; }
-        public string id_kho { get; set; }
+        public int id_kho { get; set; }
         public string ten_kho { get; set; }
         public string ma_hang { get; set; }
         public string ten_hang { get; set; }

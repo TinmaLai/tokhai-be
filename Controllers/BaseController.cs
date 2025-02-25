@@ -43,7 +43,7 @@ namespace z76_backend.Controllers
             switch (param.mode)
             {
                 case (int)ModeEnum.ADD:
-                    return Ok(await _service.Add(param.record));
+                    return Ok(await _service.Add(param.records));
                 case (int)ModeEnum.UPDATE:
                     var keyProperty = typeof(T)
                     .GetProperties()

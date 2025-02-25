@@ -55,7 +55,9 @@ public class AuthController : ControllerBase
                 full_name = request.full_name,
                 stock_manage = request.stock_manage
             };
-            var addUserStatus = await _userService.Add(user);
+            var addUserStatus = await _userService.Add(new List<UserEntity>() {
+            user
+            });
             return Ok(new
             {
                 Data = user,
@@ -105,7 +107,10 @@ public class AuthController : ControllerBase
             is_revoked = false
         };
 
-        await _repo.Add(refreshTokenEntity);
+        await _repo.Add(new List<RefreshTokenEntity>()
+        {
+            refreshTokenEntity
+        });
 
         return Ok(new
         {
@@ -160,7 +165,9 @@ public class AuthController : ControllerBase
             is_revoked = false
         };
 
-        await _repo.Add(newRefreshTokenEntity);
+        await _repo.Add(new List<RefreshTokenEntity>() {
+        newRefreshTokenEntity
+        });
 
         return Ok(new
         {

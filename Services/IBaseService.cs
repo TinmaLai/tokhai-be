@@ -7,8 +7,8 @@ namespace z76_backend.Services
     {
         Task<IEnumerable<T>> GetAll();
         Task<T> GetById(Guid id);
-        Task<int> Add(T entity);
-        Task<int> Update(IEnumerable<T> records, string field);
+        Task<int> Add(List<T> entities);
+        Task<int> Update(List<T> records, string field);
         Task<int> Delete(Guid id);
         /// <summary>
         /// Lấy dữ liệu theo phân trang và filter
