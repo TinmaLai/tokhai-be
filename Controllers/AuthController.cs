@@ -13,7 +13,7 @@ using z76_backend.Models;
 using z76_backend.Services;
 using ZstdSharp.Unsafe;
 
-[Route("api/[controller]")]
+[Route("api/[controller]s")]
 [ApiController]
 public class AuthController : ControllerBase
 {

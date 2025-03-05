@@ -85,6 +85,21 @@ namespace z76_backend.Controllers
             var data = await _service.GetAsync(filterConditions);
             return Ok(data);
         }
+        [HttpGet("DeleteBatch")]
+        public async Task<IActionResult> DeleteBatch()
+        {
+            //if(param.ids != null)
+            //{
+                var idsList = new List<Guid>();// param.ids.Split(',').Select(x => Guid.Parse(x)).ToList();
+                var data = await _service.DeleteManyAsync(idsList);
+                return Ok(data);
+            //}
+            //return Ok("Ids bị rỗng");
+            
+        }
     }
-
+    public class DeleteBatchParam
+    {
+        public string ids { get; set; }
+    }
 }

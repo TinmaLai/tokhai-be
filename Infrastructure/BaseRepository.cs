@@ -3,6 +3,7 @@ using Google.Protobuf.WellKnownTypes;
 using Microsoft.Extensions.Configuration;
 using MySql.Data.MySqlClient;
 using Mysqlx.Crud;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Configuration;
@@ -304,7 +305,6 @@ namespace z76_backend.Infrastructure
         /// <param name="filters"></param>
         /// <param name="take"></param>
         /// <param name="limit"></param>
-        /// <returns></returns>
         /// <exception cref="ArgumentException"></exception>
         public async Task<List<T>> GetAsync(List<FilterCondition> filters)
         {
@@ -405,6 +405,39 @@ namespace z76_backend.Infrastructure
             // Thực hiện truy vấn
             var result = await connection.QueryAsync<T>(sql.ToString(), parameters);
             return result.ToList();
+        }
+        /// <summary>
+        /// Xóa nhiều
+        /// </summary>
+        /// <param name="tableName"></param>
+        /// <param name="ids"></param>
+        /// <returns></returns>
+        public async Task<int> DeleteManyAsync(List<Guid> ids)
+        {
+            using var connection = new MySqlConnection(_connectionString);
+            string tableName = GetTableName();
+
+            //if (ids == null || !ids.Any())
+            //    return 0;
+            var keyProp = GetKeyProperty<T>();
+            // Tạo dynamic parameters và danh sách tên param
+            var parameters = new DynamicParameters();
+            var paramNames = new List<string>();
+            int index = 0;
+
+            foreach (var id in ids)
+            {
+                var paramName = $"@id{index}";
+                paramNames.Add(paramName);
+                parameters.Add(paramName, id);
+                index++;
+            }
+
+            //var query = $"DELETE FROM {tableName} WHERE id IN ({string.Join(", ", paramNames)})";
+            var query = $"DELETE FROM {tableName}";
+
+            var affectedRows = await connection.ExecuteAsync(query, parameters);
+            return affectedRows;
         }
     }
 }

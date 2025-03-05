@@ -13,5 +13,6 @@ namespace z76_backend.Infrastructure
         Task<object> GetPagingSummaryAsync(List<FilterCondition> filters);
         Task<List<T>> GetAsync(List<FilterCondition> filters);
         Task<List<T>> DeleteAsync(List<FilterCondition> filters);
+        Task<int> DeleteManyAsync(List<Guid> ids);
     }
 }
