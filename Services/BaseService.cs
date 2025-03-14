@@ -74,6 +74,15 @@ namespace z76_backend.Services
             }
             return null;
         }
+        public async Task<int> DeleteManyAsync(List<Guid> ids)
+        {
+            //var filterConditions = JsonConvert.DeserializeObject<List<FilterCondition>>(filters);
+            if (ids != null)
+            {
+                return await _repository.DeleteManyAsync(ids);
+            }
+            return 0;
+        }
     }
 
 }

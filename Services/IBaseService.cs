@@ -32,6 +32,7 @@ namespace z76_backend.Services
         /// <param name="filters"></param>
         /// <returns></returns>
         Task<List<T>> GetAsync(List<FilterCondition> filters);
+        Task<int> DeleteManyAsync(List<Guid> ids);
 
     }
 }
