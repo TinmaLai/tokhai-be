@@ -8,7 +8,7 @@ EXPOSE 8081
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 ARG BUILD_CONFIGURATION=Release
 WORKDIR /src
-COPY . .  # Copy toàn bộ source code
+COPY . .  
 WORKDIR "/src"
 RUN dotnet restore "./z76-backend.csproj"
 RUN dotnet build "./z76-backend.csproj" -c $BUILD_CONFIGURATION -o /app/build
